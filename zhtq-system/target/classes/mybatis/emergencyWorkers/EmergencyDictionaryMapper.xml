@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.emergencyCommand.mapper.EmergencyDictionaryMapper">
+
+    <select id="find" resultType="com.alonginfo.project.emergencyCommand.entity.EmergencyDictionary" >
+        select * from t_yj_qzqx_code
+        <where>
+            1=1
+            <if test="codeType !=null and codeType !=''">
+               and code_type=#{codeType}
+            </if>
+        </where>
+    </select>
+</mapper>

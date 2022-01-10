@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.emergencyCommand.mapper.RescueTeamsMapper">
+    <select id="queryPage" resultType="java.util.Map">
+        SELECT
+        guid,
+        team_id,
+        team_name,
+        resource_categories,
+        resource_type,
+        resource_status,
+        repair_stationary_point,
+        affiliated_unit
+        FROM
+        t_yj_gzqx_qxdwbz
+        <where>
+            1=1
+            <if test="affiliated_unit != null and affiliated_unit != ''">
+                AND instr(affiliated_unit,#{affiliated_unit})
+            </if>
+            <if test="team_name != null and team_name != ''">
+                AND instr(team_name,#{team_name}) > 0
+            </if>
+            <if test="resource_categories != null and resource_categories != ''">
+                AND instr(resource_categories,#{resource_categories})
+            </if>
+            <if test="resource_type != null and resource_type != ''">
+                AND instr(resource_type,#{resource_type})
+            </if>
+        </where>
+    </select>
+</mapper>

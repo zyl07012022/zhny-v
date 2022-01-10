@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.emergencyCommand.mapper.RepairWorkOrderMapper">
+    <select id="queryPage" resultType="com.alonginfo.project.emergencyCommand.entity.RepairWorkOrder">
+        select
+        k.guid,
+        work_number,
+        work_name,
+        power_supply,
+        repairs_time,
+        voltage_node,
+        voltage_classes,
+        county,
+        source,
+        classification,
+        fault_phenomenon,
+        work_status,
+        point_name,
+        feeder,
+        subordinate_substation,
+        point_site,
+        team_id,
+        work_power_supply,
+        emergency_number,
+        parent_number,
+        send_time,
+        fault_address,
+        emergency_note,
+        e.code_name power_supply_name,
+        e1.code_name voltage_classes_name,
+        e2.code_name county_name,
+        e3.code_name source_name,
+        e4.code_name fault_phenomenon_name,
+        e5.code_name work_power_supply_name,
+        k.userId effectUser,
+        k.courtsId,
+        photo_scene photoScene
+        FROM
+        t_yj_qzqx_work k
+        LEFT JOIN t_yj_qzqx_code e ON k.power_supply=e.guid
+        LEFT JOIN t_yj_qzqx_code e1 ON k.voltage_classes=e1.guid
+        LEFT JOIN t_yj_qzqx_code e2 ON k.county=e2.guid
+        LEFT JOIN t_yj_qzqx_code e3 ON k.source=e3.guid
+        LEFT JOIN t_yj_qzqx_code e4 ON k.fault_phenomenon=e4.guid
+        LEFT JOIN t_yj_qzqx_code e5 ON k.work_power_supply=e5.guid
+        <where>
+            1=1
+            <if test="workNumber !=null and workNumber !=''">
+                and instr(work_number,#{workNumber}) > 0
+            </if>
+            <if test="powerSupply !=null and powerSupply !=''">
+                and power_supply=#{powerSupply}
+            </if>
+            <if test="county !=null and county !=''">
+                and county=#{county}
+            </if>
+            <if test="voltageClasses !=null and voltageClasses !=''">
+                and voltage_classes=#{voltageClasses}
+            </if>
+            <if test="classification !=null and classification !=''">
+                and classification=#{classification}
+            </if>
+            <if test="faultPhenomenon !=null and faultPhenomenon !=''">
+                and fault_phenomenon=#{faultPhenomenon}
+            </if>
+            <if test="sendTime !=null and sendTime !=''">
+                and send_time&gt;=#{sendTime}
+            </if>
+            <if test="sendTimeEnd !=null and sendTimeEnd !=''">
+                and send_time&lt;=#{sendTimeEnd}
+            </if>
+            <if test="parentNumber !=null and parentNumber !=''">
+                <choose>
+                    <when test="parentNumber!='-1'">
+                        and parent_number=#{parentNumber}
+                    </when>
+                    <otherwise>
+                        and work_status!="11"
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="workStatus !=null and workStatus !=''">
+                <choose>
+                    <when test="workStatus == 1">
+                        and work_status=1 or work_status=6
+                    </when>
+                      <when test="workStatus == 2">
+                        and work_status=2 or work_status=3
+                    </when>
+                    <when test="workStatus == 5">
+                        and work_status=5 or work_status=7
+                    </when>
+                    <otherwise>
+                        and work_status=#{workStatus}
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="suborderNumber !=null and suborderNumber !=''">
+                and work_number!=#{suborderNumber}
+            </if>
+        </where>
+        order by send_time desc
+    </select>
+
+    <select id="queryUser" resultType="java.util.Map">
+        SELECT
+        r.guid,
+        r.user_id,
+        r.user_name,
+        r.courts_number,
+        r.branch_box,
+        r.user_address,
+        date_format(k.repairs_time,'%Y-%m-%d %H:%i:%s') repairs_time,
+        k.voltage_classes,
+        k.county,
+        e.code_name voltage_classes_name,
+        e1.code_name county_name,
+        s.courts_name
+        FROM
+        t_yj_qzqx_work_user u
+        LEFT JOIN t_yj_qzqx_user r ON u.user_id=r.user_id
+        LEFT JOIN t_yj_qzqx_work k ON u.work_number=k.work_number
+        LEFT JOIN t_yj_qzqx_code e ON e.guid=k.voltage_classes
+        LEFT JOIN t_yj_qzqx_code e1 ON e1.guid=k.county
+        LEFT JOIN t_yj_qzqx_courts s ON s.courts_number=r.courts_number
+        <where>
+            1=1
+            <if test="workNumber !=null and workNumber !=''">
+                and u.work_number=#{workNumber}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryCourts" resultType="java.util.Map">
+        SELECT
+        s.guid,
+        s.courts_number,
+        s.courts_name,
+        s.feeder,
+        s.power_station,
+        s.power_supply_area,
+        s.power_supply,
+        s.courts_manager,
+        s.courts_phone,
+        s.county,
+        date_format(k.repairs_time,'%Y-%m-%d %H:%i:%s') repairs_time,
+        k.voltage_classes,
+        e.code_name feeder_name,
+        e1.code_name power_station_name,
+        e2.code_name power_supply_name,
+        e3.code_name county_name,
+        e4.code_name voltage_classes_name
+        FROM t_yj_qzqx_work_courst t
+        LEFT JOIN t_yj_qzqx_courts s ON s.courts_number=t.courts_number
+        LEFT JOIN t_yj_qzqx_work k ON k.work_number=t.work_number
+        LEFT JOIN t_yj_qzqx_code e ON e.guid=s.feeder
+        LEFT JOIN t_yj_qzqx_code e1 ON e1.guid=s.power_station
+        LEFT JOIN t_yj_qzqx_code e2 ON e2.guid=s.power_supply
+        LEFT JOIN t_yj_qzqx_code e3 ON e3.guid=k.county
+        LEFT JOIN t_yj_qzqx_code e4 ON e4.guid=k.voltage_classes
+        <where>
+            1=1
+            <if test="workNumber !=null and workNumber !=''">
+                and t.work_number=#{workNumber}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryTeamInfo" resultType="java.util.Map">
+        SELECT name,phone FROM t_yj_gzqx_qxdy
+        <where>
+            1=1
+            <if test="teamId !=null and teamId !=''">
+                and team_id=#{teamId}
+            </if>
+            <if test="station !=null and station !=''">
+                <choose>
+                    <when test="station>0">
+                        and station=#{station}
+                    </when>
+                    <otherwise>
+                        and station!="24"
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </select>
+    <select id="queryVehicle" resultType="java.util.Map">
+        SELECT numbe_repair_car FROM t_yj_gzqx_qxc
+        <where>
+            1=1
+            <if test="teamId !=null and teamId !=''">
+                and team_id=#{teamId}
+            </if>
+        </where>
+    </select>
+    <select id="selectExcelData" resultType="com.alonginfo.project.emergencyCommand.entity.RepairWorkOrder">
+    select (@i:=@i+1) as RowNum,t.* from(
+        SELECT
+            work_number,
+            work_name,
+            work_status,
+            c.code_name power_supply,
+            repairs_time,
+            feeder,
+            subordinate_substation,
+            send_time,
+            survey_time,
+            GROUP_CONCAT( DISTINCT b.NAME ) qxry ,
+            emergency_note
+        FROM
+            t_yj_qzqx_work a
+            LEFT JOIN t_yj_gzqx_qxdy b ON a.team_id = b.team_id
+            AND station != 24
+            LEFT JOIN t_yj_qzqx_code c ON a.power_supply = c.guid
+
+        WHERE
+            a.work_status = 5
+        GROUP BY
+            work_number
+            order BY power_supply
+            )t,(Select @i:=0) B
+    </select>
+    <update id="operation">
+        UPDATE t_yj_qzqx_work
+        <trim prefix="set" suffixOverrides=",">
+            <if test="workStatus!=null">work_status=#{workStatus},</if>
+            <if test="sendTime!=null">send_time=now(),</if>
+        </trim>
+        WHERE work_number = #{workNumber};
+    </update>
+    <update id="suborder">
+        <foreach collection="list" item="item" index="index" separator=";">
+            UPDATE t_yj_qzqx_work
+            <set>
+                <if test="item.parentNumber != null">
+                    parent_number = #{item.parentNumber},
+                </if>
+                work_status = "11"
+            </set>
+            WHERE work_number = #{item.workNumber}
+        </foreach>
+    </update>
+    <insert id="save" parameterType="com.alonginfo.project.emergencyCommand.entity.RepairWorkOrder">
+        insert into t_yj_qzqx_work
+        (
+            guid
+        <if test="workNumber!=null and workNumber!=''">
+        ,work_number
+        </if>
+        <if test="workName!=null and workName!=''">
+        ,work_name
+        </if>
+        <if test="powerSupply!=null and powerSupply!=''">
+        ,power_supply
+        </if>
+        <if test="repairsTime!=null and repairsTime!=''">
+        ,repairs_time
+        </if>
+        <if test="voltageNode!=null and voltageNode!=''">
+        ,voltage_node
+        </if>
+        <if test="voltageClasses!=null and voltageClasses!=''">
+        ,voltage_classes
+        </if>
+        <if test="county!=null and county!=''">
+        ,county
+        </if>
+        <if test="source!=null and source!=''">
+        ,source
+        </if>
+        <if test="classification!=null and classification!=''">
+        ,classification
+        </if>
+        <if test="faultPhenomenon!=null and faultPhenomenon!=''">
+        ,fault_phenomenon
+        </if>
+        <if test="workStatus!=null and workStatus!=''">
+        ,work_status
+        </if>
+        <if test="pointName!=null and pointName!=''">
+        ,point_name
+        </if>
+        <if test="pointSite!=null and pointSite!=''">
+        ,point_site
+        </if>
+        <if test="teamId!=null and teamId!=''">
+        ,team_id
+        </if>
+        <if test="workPowerSupply!=null and workPowerSupply!=''">
+        ,work_power_supply
+        </if>
+        <if test="emergencyNumber!=null and emergencyNumber!=''">
+        ,emergency_number
+        </if>
+        <if test="parentNumber!=null and parentNumber!=''">
+        ,parent_number
+        </if>
+        ,send_time
+        <if test="faultAddress!=null and faultAddress!=''">
+        ,fault_address
+        </if>
+        <if test="emergencyNote!=null and emergencyNote!=''">
+        ,emergency_note
+        </if>
+        <if test="subordinateSubstation!=null and subordinateSubstation!=''">
+            ,subordinate_substation
+        </if>
+        <if test="feeder!=null and feeder!=''">
+            ,feeder
+        </if>
+        )
+        VALUE(
+            null
+        <if test="workNumber!=null and workNumber!=''">
+        ,#{workNumber}
+        </if>
+        <if test="workName!=null and workName!=''">
+        ,#{workName}
+        </if>
+        <if test="powerSupply!=null and powerSupply!=''">
+        ,(CAST(#{powerSupply} AS UNSIGNED ))
+        </if>
+        <if test="repairsTime!=null and repairsTime!=''">
+        ,#{repairsTime}
+        </if>
+        <if test="voltageNode!=null and voltageNode!=''">
+        ,#{voltageNode}
+        </if>
+        <if test="voltageClasses!=null and voltageClasses!=''">
+        ,(CAST(#{voltageClasses} AS UNSIGNED ))
+        </if>
+        <if test="county!=null and county!=''">
+        ,(CAST(#{county} AS UNSIGNED ))
+        </if>
+        <if test="source!=null and source!=''">
+        ,(CAST(#{source} AS UNSIGNED ))
+        </if>
+        <if test="classification!=null and classification!=''">
+        ,(CAST(#{classification} AS UNSIGNED ))
+        </if>
+        <if test="faultPhenomenon!=null and faultPhenomenon!=''">
+        ,(CAST(#{faultPhenomenon} AS UNSIGNED ))
+        </if>
+        <if test="workStatus!=null and workStatus!=''">
+       ,(CAST(#{workStatus} AS UNSIGNED ))
+        </if>
+        <if test="pointName!=null and pointName!=''">
+        ,#{pointName}
+        </if>
+        <if test="pointSite!=null and pointSite!=''">
+        ,#{pointSite}
+        </if>
+        <if test="teamId!=null and teamId!=''">
+        ,#{teamId}
+        </if>
+        <if test="workPowerSupply!=null and workPowerSupply!=''">
+        ,(CAST(#{workPowerSupply} AS UNSIGNED ))
+        </if>
+        <if test="emergencyNumber!=null and emergencyNumber!=''">
+        ,#{emergencyNumber}
+        </if>
+        <if test="parentNumber!=null and parentNumber!=''">
+        ,#{parentNumber}
+        </if>
+        ,now()
+        <if test="faultAddress!=null and faultAddress!=''">
+        ,#{faultAddress}
+        </if>
+        <if test="emergencyNote!=null and emergencyNote!=''">
+        ,#{emergencyNote}
+        </if>
+        <if test="subordinateSubstation!=null and subordinateSubstation!=''">
+            ,#{subordinateSubstation}
+        </if>
+        <if test="feeder!=null and feeder!=''">
+            ,#{feeder}
+        </if>
+        )
+    </insert>
+    <insert id="addUser" parameterType="com.alonginfo.project.emergencyCommand.entity.RelevanceUser">
+        insert into t_yj_qzqx_work_user(guid,work_number,user_id) values(null,#{workNumber},#{userId})
+    </insert>
+    <insert id="addCourts" parameterType="com.alonginfo.project.emergencyCommand.entity.RelevanceCourts">
+        insert into t_yj_qzqx_work_courst(guid,work_number,courts_number) values(null,#{workNumber},#{courtsNumber})
+    </insert>
+</mapper>

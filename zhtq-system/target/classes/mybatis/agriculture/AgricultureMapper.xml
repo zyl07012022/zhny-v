@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.agriculture.mapper.AgricultureMapper">
+
+    <resultMap type="com.alonginfo.project.agriculture.domain.Weather" id="WeatherResult">
+        <id     property="date"      column="date"      />
+        <result property="time"    column="time"    />
+        <result property="weather"     column="weather"     />
+        <result property="temperature"   column="temperature"   />
+        <result property="humidity"    column="humidity"    />
+        <result property="windDirection"      column="wind_direction"      />
+        <result property="windPower"    column="wind_power"    />
+        <result property="oxygen"      column="oxygen"      />
+        <result property="sun"      column="sun"      />
+    </resultMap>
+
+    <!-- 查询微气象-->
+    <select id="selectWeather"  parameterType="com.alonginfo.project.agriculture.domain.Weather" resultMap="WeatherResult">
+        select date,time,weather,temperature,humidity,wind_direction,wind_power,oxygen,sun
+        from cps_weather  order by time desc limit 1
+    </select>
+
+    <!-- 查询鸡舍CO2含量-->
+    <select id="selectChickhouseWatch" parameterType="String" resultType="java.util.HashMap">
+            <if test="type != null and type != '' and type =='WEEK' ">
+                select w.chichenhouse_watch_id,DATE_FORMAT( w.time, '%d' ) datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.chickenhouse_temperature,w.chickenhouse_humidity
+                FROM cps_chickenhouse_watch w, cps_chickenhouse_watch_file f
+                where
+                w.chichenhouse_watch_id = f.chichenhouse_watch_id
+                and f.chickenhouse_id = #{houseKey}
+                and YEARWEEK(date_format(w.time, '%Y-%m-%d'),1) = YEARWEEK(now(),1)
+            </if>
+            <if test='type != null and type != "" and type =="YEAR" '>
+                select w.chichenhouse_watch_id,DATE_FORMAT( w.time, '%m' ) datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.chickenhouse_temperature,w.chickenhouse_humidity
+                FROM cps_chickenhouse_watch w, cps_chickenhouse_watch_file f
+                where
+                w.chichenhouse_watch_id = f.chichenhouse_watch_id
+                and f.chickenhouse_id = #{houseKey}
+                and YEAR(w.time) = YEAR(now())
+            </if>
+            <if test="type != null and type != '' and type =='MONTH' ">
+                select w.chichenhouse_watch_id,DATE_FORMAT( w.time, '%d' ) datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.chickenhouse_temperature,w.chickenhouse_humidity
+                FROM cps_chickenhouse_watch w, cps_chickenhouse_watch_file f
+                where
+                w.chichenhouse_watch_id = f.chichenhouse_watch_id
+                and f.chickenhouse_id = #{houseKey}
+                and DATE_FORMAT( w.time, '%Y%m' ) = DATE_FORMAT( CURDATE() , '%Y%m' )
+            </if>
+            <if test="type != null and type != '' and type =='DAY' ">
+                select w.chichenhouse_watch_id,DATE_FORMAT(w.time,'%H') datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.chickenhouse_temperature,w.chickenhouse_humidity
+                FROM cps_chickenhouse_watch w, cps_chickenhouse_watch_file f
+                where
+                w.chichenhouse_watch_id = f.chichenhouse_watch_id
+                and f.chickenhouse_id = #{houseKey}
+                and to_days(w.time) = to_days(now())
+            </if>
+         GROUP BY datatime
+         ORDER BY `time`
+    </select>
+
+    <!-- 大棚co2-->
+    <select id="selectGreenhouseWatch" parameterType="String" resultType="java.util.HashMap">
+        <if test="type != null and type != '' and type =='WEEK' ">
+            select w.greenhouse_watch_id,DATE_FORMAT( w.time, '%d' ) datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.soil_temperature,w.soil_humidity
+            FROM cps_greenhouse_watch w, cps_greenhouse_watch_file f
+            where
+            w.greenhouse_watch_id = f.greenhouse_watch_id
+            and f.greenhouse_id = #{houseKey}
+            and YEARWEEK(date_format(w.time, '%Y-%m-%d'),1) = YEARWEEK(now(),1)
+        </if>
+        <if test="type != null and type != '' and type =='YEAR' ">
+            select w.greenhouse_watch_id,DATE_FORMAT( w.time, '%m' ) datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.soil_temperature,w.soil_humidity
+            FROM cps_greenhouse_watch w, cps_greenhouse_watch_file f
+            where
+            w.greenhouse_watch_id = f.greenhouse_watch_id
+            and f.greenhouse_id = #{houseKey}
+            and YEAR(w.time) = YEAR(now())
+        </if>
+        <if test="type != null and type != '' and type =='MONTH' ">
+            select w.greenhouse_watch_id,DATE_FORMAT( w.time, '%d' ) datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.soil_temperature,w.soil_humidity
+            FROM cps_greenhouse_watch w, cps_greenhouse_watch_file f
+            where
+            w.greenhouse_watch_id = f.greenhouse_watch_id
+            and f.greenhouse_id = #{houseKey}
+            and DATE_FORMAT( w.time, '%Y%m' ) = DATE_FORMAT( CURDATE() , '%Y%m' )
+        </if>
+        <if test="type != null and type != '' and type =='DAY' ">
+            select w.greenhouse_watch_id,DATE_FORMAT(w.time,'%H') datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.soil_temperature,w.soil_humidity
+            FROM cps_greenhouse_watch w, cps_greenhouse_watch_file f
+            where
+            w.greenhouse_watch_id = f.greenhouse_watch_id
+            and f.greenhouse_id = #{houseKey}
+            and to_days(w.time) = to_days(now())
+        </if>
+        GROUP BY datatime
+        ORDER BY `time`
+    </select>
+
+    <!-- 查询鸡舍申报值 -->
+    <select id="selectChickenWarn" parameterType="String" resultType="java.util.HashMap">
+        <if test='baseType != null and baseType != "" and baseType =="1" '>
+            select c.chichenhouse_watch_id,
+                c.date date,
+                DATE_FORMAT(c.time,'%Y-%m-%d %h:%i:%s') time,
+                c.carbon_dioxide carbon,
+                c.chickenhouse_temperature temperature,
+                c.chickenhouse_humidity humidity,
+                c.sun sun ,
+                v.carbon_dioxide_max carbonMax,
+                v.ch_temperature_max temperatureMax,
+                v.ch_temperature_min temperatureMin,
+                v.ch_humidity_max humidityMax,
+                v.ch_humidity_min humidityMin
+            from (
+                select * from (select * from  cps_chickenhouse_watch b ORDER  BY b.time desc) a
+                GROUP BY a.chichenhouse_watch_id
+            ) c ,cps_chickenhouse_watch_value v
+            where c.chichenhouse_watch_id =  v.chichenhouse_watch_id
+        </if>
+        <if test='baseType != null and baseType != "" and baseType =="2" '>
+            select c.greenhouse_watch_id,
+                c.date date,
+                DATE_FORMAT(c.time,'%Y-%m-%d %h:%i:%s') time,
+                c.carbon_dioxide carbon,
+                c.sun sun ,
+                c.soil_temperature temperature,
+                c.soil_humidity humidity,
+                v.carbon_dioxide_max carbonMax,
+                v.soil_temperature_max temperatureMax,
+                v.soil_temperature_min temperatureMin,
+                v.soil_humidity_max humidityMax,
+                v.soil_humidity_min humidityMin
+            from (
+                select * from (select * from  cps_greenhouse_watch b ORDER  BY b.time desc) a
+                GROUP BY a.greenhouse_watch_id
+            ) c ,cps_greenhouse_watch_value v
+            where c.greenhouse_watch_id =  v.greenhouse_watch_id
+        </if>
+    </select>
+
+    <!-- 查询监测点list -->
+    <select id="selectWatch" parameterType="String" resultType="java.util.HashMap">
+        <if test='baseType != null and baseType != "" and baseType =="1" '>
+            select chichenhouse_watch_id watchId,chichenhouse_watch_name watchName,chickenhouse_id,address from  cps_chickenhouse_watch_file
+        </if>
+        <if test='baseType != null and baseType != "" and baseType =="2" '>
+            select cc.greenhouse_watch_id,cc.greenhouse_watch_name,cc.greenhouse_id,cc.address from cps_greenhouse_watch_file cc
+        </if>
+    </select>
+
+    <!-- 鸡舍、大棚用电设备-->
+    <select id="selectUnitChichenhouse" resultType="java.lang.Integer">
+        select count(*) from cps_elec_unit_chichenhouse
+    </select>
+    <select id="selectUnitPlant" resultType="java.lang.Integer">
+        select count(*) from cps_elec_unit_greenhouse
+    </select>
+
+    <!-- 年度鸡与鸡蛋产出/石斛 -->
+    <select id="selectOutPut" resultType="java.util.HashMap">
+        select sum(royal_chicken_num) chickenNum ,sum(egg_num) eggNum from  CPS_CHICKENHOUSE_OUTPUT where DATE_FORMAT(date,'%Y') = YEAR(now())
+    </select>
+    <select id="selectPlantOutPut" resultType="java.lang.Float">
+        select sum(dendrobium_num) num from  cps_greenhouse_output where DATE_FORMAT(date,'%Y') = YEAR(now())
+    </select>
+
+    <!-- 年度累计用电-->
+    <select id="selectelecData" parameterType="String" resultType="java.lang.Float">
+        SELECT SUM(t1.powerValue) FROM ( SELECT MAX(cue.ammeter_value)-MIN(cue.ammeter_value) powerValue
+        FROM cps_use_electricity_AGRICULTURE cue  ,cps_ammeter_agriculture a WHERE
+        DATE_FORMAT(cue.time, '%Y') =  YEAR(now()) AND
+		cue.ammeter_id = a.ammeter_id AND a.base_type = #{baseType} GROUP BY cue.ammeter_id) t1
+    </select>
+
+    <!-- 查询历史耗能-->
+    <select id="selectHistoryEle" parameterType="String" resultType="java.lang.Float">
+         SELECT SUM(t1.powerValue) FROM ( SELECT MAX(cue.ammeter_value)-MIN(cue.ammeter_value) powerValue
+         FROM cps_use_electricity_AGRICULTURE cue  ,cps_ammeter_agriculture a WHERE
+         cue.time <![CDATA[ >= ]]> STR_TO_DATE(#{startTime}, '%Y-%m-%d %H:%i')
+         AND cue.time <![CDATA[ <= ]]>  STR_TO_DATE(#{endTime}, '%Y-%m-%d %H:%i')
+         AND cue.ammeter_id = a.ammeter_id AND a.base_type = #{baseType} GROUP BY cue.ammeter_id) t1
+    </select>
+
+    <!-- 能耗成本分析 -->
+    <select id="getPowerDistribute" parameterType="String" resultType="java.util.Map">
+        SELECT
+            SUM(t1.powerValue) powerValue,
+            (month(STR_TO_DATE(t1.datetime,'%Y-%m-%d'))+ 2)  DIV 3 datet,
+            t1.type dstype
+        FROM
+            (
+                SELECT
+                    MAX(cue.ammeter_value) - MIN(cue.ammeter_value) powerValue,
+                    DATE_FORMAT(cue.time, '%Y-%m-%d')  datetime,
+                    MAX(c.is_peak_season) type
+                FROM
+                    cps_use_electricity_AGRICULTURE cue
+                LEFT JOIN cps_ammeter_agriculture a ON cue.ammeter_id = a.ammeter_id
+
+                <if test='baseType != null and baseType != "" and baseType =="1" '>
+                    LEFT JOIN cps_chickenhouse_output c ON DATE_FORMAT(cue.time, '%Y-%m-%d') = DATE_FORMAT(c.date, '%Y-%m-%d')
+                </if>
+                <if test='baseType != null and baseType != "" and baseType =="2" '>
+                    LEFT JOIN cps_greenhouse_output c ON DATE_FORMAT(cue.time, '%Y-%m-%d') = DATE_FORMAT(c.date, '%Y-%m-%d')
+                </if>
+                WHERE
+                    DATE_FORMAT(cue.time, '%Y') = YEAR (now())
+                AND a.base_type = #{baseType}
+                GROUP BY
+                    cue.ammeter_id,
+                    datetime
+            ) t1
+
+        <if test='type != null and type != "" and type =="2" '>
+            GROUP BY type
+        </if>
+
+        <if test="type != null and type != '' and type =='1' ">
+            GROUP BY datet
+        </if>
+
+    </select>
+
+    <!-- 查询每月-->
+    <select id="selectEleMonth" parameterType="String" resultType="java.util.Map">
+        SELECT
+            SUM(t1.powerValue) pvalue, t1.datetime datime
+        FROM
+            (
+                SELECT
+                    MAX(cue.ammeter_value) - MIN(cue.ammeter_value) powerValue,
+                    DATE_FORMAT(cue.time, '%m') datetime
+                FROM
+                    cps_use_electricity_AGRICULTURE cue,
+                    cps_ammeter_agriculture a
+                WHERE
+                    DATE_FORMAT(cue.time, '%Y') = YEAR (now())
+                AND cue.ammeter_id = a.ammeter_id
+                AND a.base_type = #{baseType}
+                GROUP BY
+                    cue.ammeter_id,
+                    datetime
+            ) t1
+            GROUP BY datime
+    </select>
+
+    <!-- 产出数据查询 -->
+    <select id="selectOutputData"  parameterType="String" resultType="java.util.Map">
+        <if test='baseType != null and baseType != "" and baseType =="1" '>
+            SELECT
+                sum(royal_chicken_num) chickenNum,
+                sum(egg_num) eggNum,
+                DATE_FORMAT(date, '%m') datetime
+            FROM
+                cps_chickenhouse_output
+            WHERE
+                DATE_FORMAT(date, '%Y') = YEAR (now())
+            GROUP BY datetime
+        </if>
+
+        <if test='baseType != null and baseType != "" and baseType =="2" '>
+            SELECT
+                sum(dendrobium_num) num,
+                DATE_FORMAT(date, '%m') datetime
+            FROM
+                cps_greenhouse_output
+            WHERE
+                DATE_FORMAT(date, '%Y') = YEAR (now())
+            GROUP BY
+                datetime
+        </if>
+    </select>
+
+    <!-- 土壤数据预警数据 -->
+    <select id="trChartWaring" parameterType="String" resultType="java.util.Map">
+         select w.greenhouse_watch_id,DATE_FORMAT( w.time, '%d' ) datatime,AVG(w.carbon_dioxide) carbon,w.sun,w.soil_temperature temperature,w.soil_humidity humidity
+            FROM cps_greenhouse_watch w, cps_greenhouse_watch_file f
+            where
+            w.greenhouse_watch_id = f.greenhouse_watch_id
+            and f.greenhouse_id = #{houseKey}
+            and YEARWEEK(date_format(w.time, '%Y-%m-%d'),1) = YEARWEEK(now(),1)
+            GROUP BY datatime
+    </select>
+
+    <!-- 设备能耗 -->
+    <select id="selectUnitPowerUse" parameterType="String" resultType="map">
+        select
+        ceu.use_unit_name unitName, ceu.power ratedPower, IFNULL(ceur.run_time, 0) runTime,  IFNULL(t1.powerUse,0) powerUse
+         from
+
+        <if test='baseType == "1"'>
+            cps_elec_unit_chichenhouse ceu left join
+            ( select use_unit_id, sum(run_time) run_time
+                from cps_elec_unit_chichenhouse_runtime
+            where DATE_FORMAT(date, '%Y') = YEAR (now())
+            group by use_unit_id )
+             ceur on ceu.use_unit_id = ceur.use_unit_id
+        </if>
+        <if test='baseType == "2"'>
+            cps_elec_unit_greenhouse ceu
+            left join
+            ( select use_unit_id, sum(run_time) run_time
+            from cps_elec_unit_greenhouse_runtime
+            where DATE_FORMAT(date, '%Y') = YEAR (now())
+            group by use_unit_id )
+
+            ceur on ceu.use_unit_id = ceur.use_unit_id
+        </if>
+        left join
+            ( select ammeter_id, round(max(ammeter_value)-min(ammeter_value),2) powerUse
+               from cps_use_electricity_agriculture
+               where DATE_FORMAT(date, '%Y') = YEAR (now())
+               group by ammeter_id  ) t1
+        on ceu.ammeter_id = t1.ammeter_id
+    </select>
+
+
+    <select id="selectWindMachine" resultType="map">
+        select CASE  WHEN now()-MAX(ceur.time) &lt; 6000 THEN '正常' ELSE '不正常' END wmStatus,
+        SUM(ceur.run_time) runTime
+        from cps_elec_unit_chichenhouse ceu
+                          left join
+                      cps_elec_unit_chichenhouse_runtime ceur
+            on ceu.use_unit_id = ceur.use_unit_id
+        where ceu.chickenhouse_id = #{houseId} and ceu.use_type = 1
+        <if test="type == 'DAY'">
+            and  DATE_FORMAT(date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+        </if>
+        <if test="type == 'WEEK'">
+            and  YEARWEEK(date, 1) = YEARWEEK(NOW(), 1)
+        </if>
+        <if test="type == 'MONTH'">
+            and  DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+        </if>
+        <if test="type == 'YEAR'">
+            and  YEAR(date) = YEAR(NOW())
+        </if>
+    </select>
+
+    <select id="selectOPByBaseType" parameterType="String" resultType="map">
+        <if test='baseType != null and baseType != "" and baseType =="1" '>
+            select cc.chickenhouse_name,
+            case when cuea.powerUse > 0 then round(ifnull(cco.outputNum,0)/cuea.powerUse,2) else 0 end op
+            from cps_chickenhouse cc
+            left join
+            (select chickenhouse_id, (sum(royal_chicken_num) * 20 + sum(egg_num)) outputNum
+            from cps_chickenhouse_output
+            where  YEAR(date) = YEAR(NOW())
+            group by chickenhouse_id
+            ) cco
+            on cc.chickenhouse_id = cco.chickenhouse_id
+            left join
+            (select t1.house_id, sum(t1.powerUse) powerUse
+            from
+            (select caa.ammeter_id, max(caa.house_id) house_id, (max(cue.ammeter_value) - min(cue.ammeter_value)) powerUse
+            from cps_ammeter_agriculture caa
+            left join cps_use_electricity_agriculture cue on caa.ammeter_id = cue.ammeter_id
+            where caa.base_type = 1
+            and YEAR(cue.date) = YEAR(NOW())
+            group by caa.ammeter_id ) t1
+            group by t1.house_id) cuea
+            on cc.chickenhouse_id = cuea.house_id
+            where cc.chickenhouse_id != 10011
+            order by op desc
+        </if>
+
+        <if test='baseType != null and baseType != "" and baseType =="2" '>
+            select cc.greenhouse_name,
+            case when cuea.powerUse > 0 then round(ifnull(cco.outputNum,0)/cuea.powerUse,2) else 0 end op
+            from cps_greenhouse cc
+            left join
+            (select greenhouse_id, sum(dendrobium_num) outputNum
+            from cps_greenhouse_output
+            where  YEAR(date) = YEAR(NOW())
+            group by greenhouse_id
+            ) cco
+            on cc.greenhouse_id = cco.greenhouse_id
+            left join
+            (select t1.house_id, sum(t1.powerUse) powerUse
+            from
+            (select caa.ammeter_id, max(caa.house_id) house_id, (max(cue.ammeter_value) - min(cue.ammeter_value)) powerUse
+            from cps_ammeter_agriculture caa
+            left join cps_use_electricity_agriculture cue on caa.ammeter_id = cue.ammeter_id
+            where caa.base_type = 1
+            and YEAR(cue.date) = YEAR(NOW())
+            group by caa.ammeter_id ) t1
+            group by t1.house_id) cuea
+            on cc.greenhouse_id = cuea.house_id
+            where cc.greenhouse_id != 10031
+            order by op desc
+        </if>
+    </select>
+
+    <select id="selectPRByBaseType" resultType="map">
+        <if test='baseType != null and baseType != "" and baseType =="1" '>
+            select t1.groupTime, case when sum(power) > 0 then round(ifnull(sum(t1.powerUse),0) / sum(power) * 10000, 2) else '' end pr
+            from (
+            select DATE_FORMAT(cue.time, '%H') groupTime, cue.ammeter_id, max(ceu.power) power,  (max(cue.ammeter_value) - min(cue.ammeter_value)) powerUse
+            from cps_elec_unit_chichenhouse ceu
+            left join cps_use_electricity_agriculture cue on ceu.ammeter_id = cue.ammeter_id
+            where DATE_FORMAT(cue.date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+            group by groupTime,cue.ammeter_id ) t1
+            group by t1.groupTime
+        </if>
+
+        <if test='baseType != null and baseType != "" and baseType =="2" '>
+            select t1.groupTime, case when sum(power) > 0 then round(ifnull(sum(t1.powerUse),0) / sum(power) * 10000, 2) else '' end pr
+            from (
+            select DATE_FORMAT(cue.time, '%H') groupTime, cue.ammeter_id,max(ceu.power) power, (max(cue.ammeter_value) - min(cue.ammeter_value)) powerUse
+            from cps_elec_unit_greenhouse ceu
+            left join cps_use_electricity_agriculture cue on ceu.ammeter_id = cue.ammeter_id
+            where DATE_FORMAT(cue.date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+            group by groupTime,cue.ammeter_id ) t1
+            group by t1.groupTime
+        </if>
+    </select>
+</mapper>

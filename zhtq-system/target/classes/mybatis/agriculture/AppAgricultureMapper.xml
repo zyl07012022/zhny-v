@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.agriculture.mapper.AppAgricultureMapper">
+
+    <!-- 查询石斛场景监测点数据 -->
+    <select id="selectPlantWatch" resultType="java.util.HashMap">
+        SELECT
+            cf.greenhouse_id,
+            cf.greenhouse_watch_name,
+            cf.greenhouse_watch_id,
+            cf.address,
+            cw.time,
+            cw.carbon_dioxide,
+            cw.sun,
+            cw.soil_humidity,
+            cw.soil_temperature
+        FROM
+            cps_greenhouse_watch_file cf
+        LEFT JOIN (
+            SELECT * FROM
+                (SELECT * FROM cps_greenhouse_watch ORDER BY time DESC ) a
+            GROUP BY a.greenhouse_watch_id
+        ) cw ON cf.greenhouse_watch_id = cw.greenhouse_watch_id
+    </select>
+
+    <!-- 贵妃鸡场景监测点数据 -->
+    <select id="selectChickenWatch" resultType="java.util.HashMap">
+        SELECT
+            cf.chickenhouse_id,
+            cf.chichenhouse_watch_name,
+            cf.chichenhouse_watch_id,
+            cf.address,
+            cw.time,
+            cw.carbon_dioxide,
+            cw.sun,
+            cw.chickenhouse_humidity,
+            cw.chickenhouse_temperature
+        FROM
+            cps_chickenhouse_watch_file cf
+        LEFT JOIN (
+            SELECT * FROM
+                (SELECT * FROM cps_chickenhouse_watch ORDER BY time DESC ) a
+            GROUP BY a.chichenhouse_watch_id
+        ) cw ON cf.chichenhouse_watch_id = cw.chichenhouse_watch_id
+    </select>
+
+    <!-- 根据监测点id获取数据详情 石斛场景 -->
+    <select id="getPlantWatchForId" parameterType="String"  resultType="java.util.HashMap">
+        SELECT
+            cf.greenhouse_id,cf.greenhouse_watch_name,cf.greenhouse_watch_id,
+            cf.address,cw.time,cw.carbon_dioxide,cw.sun,cw.soil_humidity,
+            cw.soil_temperature,cv.carbon_dioxide_max,cv.soil_temperature_max,
+            cv.soil_temperature_min,cv.soil_humidity_min,cv.soil_humidity_max
+        FROM
+            cps_greenhouse_watch_file cf
+        LEFT JOIN (
+            SELECT * FROM
+                (SELECT * FROM cps_greenhouse_watch ORDER BY time DESC ) a
+            GROUP BY a.greenhouse_watch_id
+        ) cw ON cf.greenhouse_watch_id = cw.greenhouse_watch_id
+        LEFT JOIN cps_greenhouse_watch_value cv
+        ON cf.greenhouse_watch_id = cv.greenhouse_watch_id
+        WHERE cf.greenhouse_watch_id = #{watchId}
+    </select>
+
+    <!-- 根据监测点id获取数据详情 养殖场景 -->
+    <select id="getChickenWatchForId" parameterType="String"  resultType="java.util.HashMap">
+        SELECT
+            cf.chickenhouse_id,cf.chichenhouse_watch_name,cf.chichenhouse_watch_id,
+            cf.address,cw.time,cw.carbon_dioxide,cw.sun,cw.chickenhouse_humidity,
+            cw.chickenhouse_temperature,cv.carbon_dioxide_max,cv.ch_temperature_max,
+            cv.ch_temperature_min,cv.ch_humidity_min,cv.ch_humidity_max
+        FROM
+                cps_chickenhouse_watch_file cf
+        LEFT JOIN (
+                SELECT * FROM
+                        (SELECT * FROM cps_chickenhouse_watch ORDER BY time DESC ) a
+                GROUP BY a.chichenhouse_watch_id
+        ) cw ON cf.chichenhouse_watch_id = cw.chichenhouse_watch_id
+        LEFT JOIN cps_chickenhouse_watch_value cv
+        ON cf.chichenhouse_watch_id = cv.chichenhouse_watch_id
+        WHERE cf.chichenhouse_watch_id =  #{watchId}
+    </select>
+
+    <!-- 石斛监测点数据-->
+    <select id="selectPlantWaringWatch" resultType="java.util.HashMap">
+        SELECT
+            cf.greenhouse_id,cf.greenhouse_watch_name,cf.greenhouse_watch_id,
+            cf.address,cw.time,cw.carbon_dioxide coT,cw.sun,cw.soil_humidity sd,
+            cw.soil_temperature wd,cv.carbon_dioxide_max coTMax,cv.soil_temperature_max wdMax,
+            cv.soil_temperature_min wdMin,cv.soil_humidity_min sdMin,cv.soil_humidity_max sdMax
+        FROM
+            cps_greenhouse_watch_file cf
+        LEFT JOIN (
+            SELECT * FROM
+                (SELECT * FROM cps_greenhouse_watch ORDER BY time DESC ) a
+            GROUP BY a.greenhouse_watch_id
+        ) cw ON cf.greenhouse_watch_id = cw.greenhouse_watch_id
+        LEFT JOIN cps_greenhouse_watch_value cv
+        ON cf.greenhouse_watch_id = cv.greenhouse_watch_id
+    </select>
+
+    <!-- 养殖场地检测点数据 -->
+    <select id="selectChickenWaringWatch" resultType="java.util.HashMap">
+        SELECT
+            cf.chickenhouse_id,cf.chichenhouse_watch_name,cf.chichenhouse_watch_id,
+            cf.address,cw.time,cw.carbon_dioxide coT,cw.sun,cw.chickenhouse_humidity sd,
+            cw.chickenhouse_temperature wd,cv.carbon_dioxide_max coTMax,cv.ch_temperature_max wdMax,
+            cv.ch_temperature_min wdMin,cv.ch_humidity_min sdMin,cv.ch_humidity_max sdMax
+        FROM
+                cps_chickenhouse_watch_file cf
+        LEFT JOIN (
+                SELECT * FROM
+                        (SELECT * FROM cps_chickenhouse_watch ORDER BY time DESC ) a
+                GROUP BY a.chichenhouse_watch_id
+        ) cw ON cf.chichenhouse_watch_id = cw.chichenhouse_watch_id
+        LEFT JOIN cps_chickenhouse_watch_value cv
+        ON cf.chichenhouse_watch_id = cv.chichenhouse_watch_id
+    </select>
+
+    <select id="selectUnitPower" parameterType="String" resultType="java.util.HashMap">
+        <if test='baseType != null and baseType != "" and baseType =="1" '>
+            SELECT
+            max( ceu.use_unit_name ) unitName,
+            round( MAX( cue.ammeter_value ) - MIN( cue.ammeter_value ), 2 ) powerUse,
+            CASE
+
+            WHEN now( ) - max( ceur.time ) &lt; 6000 THEN
+            '运行中' ELSE '已停止'
+            END runStatus
+            FROM
+            cps_elec_unit_chichenhouse ceu
+            LEFT JOIN cps_elec_unit_chichenhouse_runtime ceur ON ceu.use_unit_id = ceur.use_unit_id
+            LEFT JOIN cps_use_electricity_agriculture cue ON ceu.ammeter_id = cue.ammeter_id
+            WHERE
+            DATE_FORMAT( cue.time, '%Y-%m' ) = DATE_FORMAT( now( ), '%Y-%m' )
+            GROUP BY
+            ceu.ammeter_id
+        </if>
+
+        <if test='baseType != null and baseType != "" and baseType =="2" '>
+            SELECT
+            max( ceu.use_unit_name ) unitName,
+            round( MAX( cue.ammeter_value ) - MIN( cue.ammeter_value ), 2 ) powerUse,
+            CASE
+
+            WHEN now( ) - max( ceur.time ) &lt; 6000 THEN
+            '运行中' ELSE '已停止'
+            END runStatus
+            FROM
+            cps_elec_unit_greenhouse ceu
+            LEFT JOIN cps_elec_unit_greenhouse_runtime ceur ON ceu.use_unit_id = ceur.use_unit_id
+            LEFT JOIN cps_use_electricity_agriculture cue ON ceu.ammeter_id = cue.ammeter_id
+            WHERE
+            DATE_FORMAT( cue.time, '%Y-%m' ) = DATE_FORMAT( now( ), '%Y-%m' )
+            GROUP BY
+            ceu.ammeter_id
+        </if>
+
+        <if test='rows != null and rows != 0 '>
+            limit #{rows,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <select id="selectHouseSurvey" resultType="map">
+        <if test='baseType != null and baseType != "" and baseType =="1" '>
+            SELECT
+            ch.chickenhouse_id houseId,
+            ch.chickenhouse_name houseName,
+            chw.carbon_dioxide carbon
+            FROM
+            cps_chickenhouse ch
+            LEFT JOIN cps_chickenhouse_watch_file chwf ON ch.chickenhouse_id = chwf.chickenhouse_id
+            LEFT JOIN cps_chickenhouse_watch chw ON ( chwf.chichenhouse_watch_id = chw.chichenhouse_watch_id AND chw.time = ( SELECT max( time ) FROM cps_chickenhouse_watch ) )
+            WHERE
+            ch.chickenhouse_id != 10011
+        </if>
+
+        <if test='baseType != null and baseType != "" and baseType =="2" '>
+            SELECT
+            ch.greenhouse_id houseId,
+            ch.greenhouse_name houseName,
+            chw.water_ec water
+            FROM
+            cps_greenhouse ch
+            LEFT JOIN cps_greenhouse_watch_file chwf ON ch.greenhouse_id = chwf.greenhouse_id
+            LEFT JOIN cps_greenhouse_watch chw ON ( chwf.greenhouse_watch_id = chw.greenhouse_watch_id AND chw.time = ( SELECT max( time ) FROM cps_greenhouse_watch ) )
+            WHERE
+            ch.greenhouse_id != 10031
+        </if>
+
+        <if test='rows != null and rows != 0 '>
+            limit #{rows,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <insert id="insertChickenhouseOutput" parameterType="map">
+        insert into cps_chickenhouse_output (`chickenhouse_id`, `date`, `royal_chicken_num`, `egg_num`, `create_person`, `create_time`, `is_peak_season`)
+        values
+        <foreach collection="list" item="item" index="index"
+                 separator=",">
+            (
+            #{item.houseId},
+            STR_TO_DATE(#{item.date},'%Y-%m-%d'),
+            #{item.chickenNum},
+            #{item.eggNum},
+            #{item.createPerson},
+            now(),
+            #{item.isPeakSeason}
+            )
+        </foreach>
+    </insert>
+    <insert id="insertGreenhouseOutput" parameterType="map">
+        insert into cps_greenhouse_output (`greenhouse_id`, `date`, `dendrobium_num`, `create_person`, `create_time`, `is_peak_season`)
+        values
+        <foreach collection="list" item="item" index="index"
+                 separator=",">
+            (
+            #{item.houseId},
+            STR_TO_DATE(#{item.date},'%Y-%m-%d'),
+            #{item.dendrobiumNum},
+            #{item.createPerson},
+            now(),
+            #{item.isPeakSeason}
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteChickenhouseOutput" parameterType="map">
+        DELETE FROM cps_chickenhouse_output WHERE
+        <foreach collection="list" item="item" index="index"
+                 separator=" OR ">
+            (`chickenhouse_id` = #{item.houseId} AND DATE_FORMAT(`date`, '%Y-%m-%d') =  #{item.date})
+        </foreach>
+    </delete>
+
+    <delete id="deleteGreenhouseOutput" parameterType="map">
+        DELETE FROM cps_greenhouse_output WHERE
+        <foreach collection="list" item="item" index="index"
+                 separator=" OR ">
+            (`greenhouse_id` = #{item.houseId} AND DATE_FORMAT(`date`, '%Y-%m-%d') =  #{item.date})
+        </foreach>
+    </delete>
+</mapper>

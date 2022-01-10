@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.appInspection.mapper.AppInspectionMapper">
+
+    <select id="queryRestTime" resultType="com.alonginfo.project.appInspection.entities.InspectionsRecord">
+        select
+            patrol_type  patrolType,
+            patrol_send_data  patrolSendData
+        from
+        t_yj_qzqx_patrol_scheme
+        where patrol_scheme_number = #{patrolSchemeNumber}
+    </select>
+
+    <select id="queryBaseInfo" resultType="com.alonginfo.project.appInspection.entities.InspectionsRecord">
+        select
+            a.patrol_object  patrolObject,b.code_name patrolAbnormal
+        from
+        t_yj_qzqx_patrol_scheme a
+        left join t_yj_qzqx_code b
+        on a.patrol_abnormal = b.guid
+        where patrol_scheme_number = #{patrolSchemeNumber}
+    </select>
+
+    <select id="queryUsername" resultType="java.lang.String">
+        select  b.user_name  from t_yj_qzqx_work_user a
+        left join sys_user  b on a.user_id = b.user_id
+        where a.work_number = #{patrolSchemeNumber}
+    </select>
+
+    <insert id="addInspectionDetails" parameterType="com.alonginfo.project.component.entities.InspectionDetails">
+        insert into t_yj_qzqx_patrol_detail (
+        guid, patrol_scheme_number,patrol_data,patrol_person,
+        jydt,mc,jzw,fwsb,
+        hwsb,snzm,mssh,fwjs,
+        xdwdb,snqj,ywys,sfyw,
+        snwd,fdwh,dlgb,dlgjs,
+        jksb,mntb,snxfaq,other_yc,
+        kgzt,kgbh,ybzz,kgfh,
+        ycfd,ycqw,sbsl,gssfzc,
+        wljd,dlzdqk,mpbq,ddxsq,
+        byqbz,fssfsz,wkzswh,dljt,
+        lswz,ywywys,dymlss,dygzfm,
+        ybcl,fhzzs,dydllj,ysywyw)
+        values
+        (
+        null,#{patrolSchemeNumber},#{patrolData},#{patrolPerson},
+        #{jydt},#{mc},#{jzw},#{fwsb},
+        #{hwsb},#{snzm},#{mssh},#{fwjs},
+        #{xdwdb},#{snqj},#{ywys},#{sfyw},
+
+        #{snwd},#{fdwh},#{dlgb},#{dlgjs},
+        #{jksb},#{mntb},#{snxfaq},#{otheryc},
+        #{kgzt},#{kgbh},#{ybzz},#{kgfh},
+        #{ycfd},#{ycqw},#{sbsl},#{gssfzc},
+
+        #{wljd},#{dlzdqk},#{mpbq},#{ddxsq},
+        #{byqbz},#{fssfsz},#{wkzswh},#{dljt},
+        #{lswz},#{ywywys},#{dymlss},#{dygzfm},
+        #{ybcl},#{fhzzs},#{dydllj},#{ysywyw}
+        )
+
+    </insert>
+
+    <insert id="addHighVolSwitchInfo" parameterType="java.util.List">
+        insert into t_yj_qzwx_high_tension_switch(guid, switch_number,switch_type,patrol_scheme_number) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            (null,#{item.switchNumber},#{item.switchType},#{item.patrolSchemeNumber})
+        </foreach>
+    </insert>
+
+    <insert id="addTransformerInfo" parameterType="java.util.List">
+        insert into t_yj_qzqx_transformer(guid, transformer_number,transformer_temperature,patrol_scheme_number) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            (null,#{item.transformerNumber},#{item.transformerTemperature},#{item.patrolSchemeNumber})
+        </foreach>
+    </insert>
+    <update id="updateState">
+        UPDATE t_yj_qzqx_patrol_scheme
+        <trim prefix="set" suffixOverrides=",">
+            <if test="patrolStatus!=null and patrolStatus !=''">patrol_status=#{patrolStatus},</if>
+            <if test="patrolSchemeName!=null and patrolSchemeName !=''">patrol_scheme_name=#{patrolSchemeName},</if>
+            <if test="patrolType!=null and patrolType !=''">patrol_type=#{patrolType},</if>
+            <if test="countyCompany!=null and countyCompany !=''">county_company=#{countyCompany},</if>
+            <if test="powerSupply!=null and powerSupply !=''">power_supply=#{powerSupply},</if>
+            <if test="subordinateSubstation!=null and subordinateSubstation !=''">subordinate_substation=#{subordinateSubstation},</if>
+            <if test="feeder!=null and feeder !=''">feeder=#{feeder},</if>
+            <if test="patrolTypes!=null and patrolTypes !=''">patrol_types=#{patrolTypes},</if>
+            <if test="patrolObject!=null and patrolObject !=''">patrol_object=#{patrolObject},</if>
+            <if test="patrolData!=null and patrolData !=''">patrol_data=#{patrolData},</if>
+            <if test="patrolSendData!=null and patrolSendData !=''">patrol_send_data=#{patrolSendData},</if>
+            <if test="patrolNumber!=null and patrolNumber !=''">patrol_number=#{patrolNumber},</if>
+            <if test="teamId!=null and teamId !=''">team_id=#{teamId},</if>
+            <if test="voltageClasses!=null and voltageClasses !=''">voltage_classes=#{voltageClasses},</if>
+            <if test="patrolAbnormal!=null and patrolAbnormal !=''">patrol_abnormal=#{patrolAbnormal},</if>
+            <if test="note!=null and note !=''">note=#{note},</if>
+            <if test="feedback!=null and feedback !=''">feedback=#{feedback},</if>
+            <if test="voltage!=null and voltage !=''">voltage=#{voltage},</if>
+            <if test="source!=null and source !=''">source=#{source},</if>
+            <if test="patrolAddress!=null and patrolAddress !=''">patrol_address=#{patrolAddress},</if>
+            <if test="pointName!=null and pointName !=''">point_name=#{pointName},</if>
+            <if test="pointSite!=null and pointSite !=''">point_site=#{pointSite},</if>
+            <if test="parentNumber!=null and parentNumber !=''">parent_number=#{parentNumber},</if>
+            <if test="userId!=null and userId !=''">userId=#{userId},</if>
+            <if test="courtsId!=null and courtsId !=''">courtsId=#{courtsId},</if>
+            <if test="photoScene!=null and photoScene !=''">photo_scene=#{photoScene},</if>
+        </trim>
+        WHERE patrol_scheme_number = #{patrolSchemeNumber}
+    </update>
+
+    <update id="updateVoltageDetail">
+        update t_yj_qzqx_voltage_detail
+        <trim prefix="set" suffixOverrides=",">
+            <if test="loadRatea!=null and loadRatea!=''">load_rate_a=#{loadRatea},</if>
+            <if test="loadRateb!=null and loadRateb!=''">load_rate_b=#{loadRateb},</if>
+            <if test="loadRatec!=null and loadRatec!=''">load_rate_c=#{loadRatec},</if>
+            <if test="minv!=null and minv!=''">min_v=#{minv},</if>
+            <if test="timeMinimumImbalance!=null and timeMinimumImbalance!=''">time_minimum_imbalance=str_to_date(#{timeMinimumImbalance},'%Y-%m-%d %H:%i:%s'),</if>
+            <if test="updateTime!=null and updateTime!=''">update_time=now(),</if>
+        </trim>
+        WHERE patrol_scheme_number = #{patrolSchemeNumber}
+    </update>
+
+    <update id="updateTrigonalImbalance">
+        update t_jy_qzqx_trigonal_imbalance
+        <trim prefix="set" suffixOverrides=",">
+            <if test="loadRatea!=null and loadRatea!=''">load_rate_a=#{loadRatea},</if>
+            <if test="loadRateb!=null and loadRateb!=''">load_rate_b=#{loadRateb},</if>
+            <if test="loadRatec!=null and loadRatec!=''">load_rate_c=#{loadRatec},</if>
+            <if test="maxImbalance!=null and maxImbalance!=''">max_imbalance=#{maxImbalance},</if>
+            <if test="timeMaximumImbalance!=null and timeMaximumImbalance!=''">time_maximum_imbalance=str_to_date(#{timeMaximumImbalance},'%Y-%m-%d %H:%i:%s'),</if>
+            <if test="updateTime!=null and updateTime!=''">update_time=now(),</if>
+        </trim>
+        WHERE patrol_scheme_number = #{patrolSchemeNumber}
+    </update>
+
+    <update id="updateOverloadDetail">
+        update t_yj_qzqx_overload_detail
+        <trim prefix="set" suffixOverrides=",">
+            <if test="loadRatea!=null and loadRatea!=''">load_rate_a=#{loadRatea},</if>
+            <if test="loadRateb!=null and loadRateb!=''">load_rate_b=#{loadRateb},</if>
+            <if test="loadRatec!=null and loadRatea!=''">load_rate_c=#{loadRatec},</if>
+            <if test="maxImbalance!=null and maxImbalance!=''">max_imbalance=#{maxImbalance},</if>
+            <if test="timeMinimumImbalance!=null and timeMinimumImbalance!=''">time_maximum_imbalance=str_to_date(#{timeMaximumImbalance},'%Y-%m-%d %H:%i:%s'),</if>
+            <if test="updateTime!=null and updateTime!=''">update_time=now(),</if>
+        </trim>
+        WHERE patrol_scheme_number = #{patrolSchemeNumber}
+    </update>
+</mapper>

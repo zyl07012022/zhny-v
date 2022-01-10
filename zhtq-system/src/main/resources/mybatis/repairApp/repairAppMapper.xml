@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.repairApp.mapper.RepairMapper">
+    <select id="selectRepair" resultType="java.util.Map">
+        SELECT
+        work_number workNumber,
+        fault_phenomenon,
+        voltage_classes,
+        point_name pointName,
+        fault_address,
+        date_format(repairs_time,'%Y-%m-%d %H:%i:%s')repairsTime,
+        power_supply,
+        source,
+        IFNULL(emergency_number,'null') emergencyNumber,
+        date_format(send_time,'%Y-%m-%d %H:%i:%s')sendTime,
+        point_site pointSite,
+        e1.code_name faultPhenomenonName,
+        e2.code_name voltageClassesName,
+        e3.code_name powerSupplyName,
+        e4.code_name faultAddressName,
+        work_status workStatus,
+        emergency_note emergencyNote,
+        CASE WHEN work_status=2 THEN '已到达'
+        WHEN work_status=3 THEN '勘察'
+        WHEN work_status=4 THEN '修复'
+        WHEN work_status=6 THEN '已派工'
+        WHEN work_status=5 THEN '已复电'
+        ELSE '其他' END workStatusName
+        FROM
+        t_yj_qzqx_work k
+        LEFT JOIN t_yj_qzqx_code e1 ON e1.guid=k.fault_phenomenon
+        LEFT JOIN t_yj_qzqx_code e2 ON e2.guid=k.voltage_classes
+        LEFT JOIN t_yj_qzqx_code e3 ON e3.guid=k.power_supply
+        LEFT JOIN t_yj_qzqx_code e4 ON e4.guid=k.fault_address
+        <where>
+            1=1
+            <if test="sendTime !=null and sendTime !=''">
+                and DATE_SUB(CURDATE(), INTERVAL ${sendTime} DAY) &lt;= DATE(send_time)
+            </if>
+        </where>
+        ORDER BY send_time DESC
+    </select>
+    <update id="updateState">
+        UPDATE t_yj_qzqx_work
+        <trim prefix="set" suffixOverrides=",">
+            <if test="workStatus!=null and workStatus !=''">work_status=#{workStatus},</if>
+            <if test="surveyTime!=null and surveyTime !=''">survey_time=date_format(#{surveyTime},'%Y-%m-%d %H:%i:%s'),</if>
+            <if test="repairNum!=null and repairNum !=''">repair_num=#{repairNum},</if>
+            <if test="isEquipment!=null and isEquipment !=''">is_equipment=#{isEquipment},</if>
+            <if test="equipmentName!=null and equipmentName !=''">equipment_name=#{equipmentName},</if>
+            <if test="degreeUrgency!=null and degreeUrgency !=''">degree_urgency=#{degreeUrgency},</if>
+            <if test="sort!=null and sort !=''">sort=#{sort},</if>
+            <if test="voltageClasses!=null and voltageClasses !=''">voltage_classes=#{voltageClasses},</if>
+            <if test="faultContent!=null and faultContent !=''">fault_content=#{faultContent},</if>
+            <if test="repairContent!=null and repairContent !=''">repair_content=#{repairContent},</if>
+            <if test="userId!=null and userId !=''">userId=#{userId},</if>
+            <if test="courtsId!=null and courtsId !=''">courtsId=#{courtsId},</if>
+            <if test="photoScene!=null and photoScene !=''">photo_scene=#{photoScene},</if>
+        </trim>
+        WHERE work_number = #{workNumber}
+    </update>
+</mapper>

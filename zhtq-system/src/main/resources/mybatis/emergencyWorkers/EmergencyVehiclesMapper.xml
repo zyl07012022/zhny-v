@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.emergencyCommand.mapper.EmergencyVehiclesMapper">
+<!--    <resultMap type="com.alonginfo.project.emergencyCommand.entity.EmergencyVehicles" id="vehiclesResultMap">-->
+<!--        <id     property="guid"        column="guid"/>-->
+<!--        <result property="numbeRepairCar"        column="numbe_repair_car" />-->
+<!--        <result property="nameRepairCar"      column="name_repair_car" />-->
+<!--        <result property="typeRepairCar"        column="type_repair_car" />-->
+<!--        <result property="emergencyCrewName"        column="emergency_crew_name"/>-->
+<!--        <result property="affiliatedUnit" column="affiliated_unit"/>-->
+<!--        <result property="gpsNumber"       column="gps_number"/>-->
+<!--        <result property="note"            column="note"/>-->
+<!--    </resultMap>-->
+
+    <select id="queryPage" resultType="com.alonginfo.project.emergencyCommand.entity.EmergencyVehicles" >
+        select
+            numbe_repair_car,
+            name_repair_car,
+            e.code_name type_repair_car,
+            team_id,
+            affiliated_unit,
+            gps_number,
+            note
+        from
+            t_yj_gzqx_qxc c
+            left join t_yj_qzqx_code e on e.guid = c.type_repair_car
+        <where>
+            1=1
+            <if test="affiliatedUnit !=null and affiliatedUnit !=''">
+                and affiliated_unit=#{affiliatedUnit}
+            </if>
+            <if test="nameRepairCar !=null and nameRepairCar !=''">
+                and instr(name_repair_car,#{nameRepairCar})>0
+            </if>
+            <if test="numbeRepairCar !=null and numbeRepairCar !=''">
+                and instr(numbe_repair_car,#{numbeRepairCar})>0
+            </if>
+            <if test="typeRepairCar !=null and typeRepairCar !=''">
+                and type_repair_car=#{typeRepairCar}
+            </if>
+        </where>
+    </select>
+</mapper>

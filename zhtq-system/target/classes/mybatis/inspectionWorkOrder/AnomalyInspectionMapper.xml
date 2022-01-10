@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.inspectionWorkOrder.mapper.AnomalyInspectionMapper">
+    <select id="selectAnomalyOrder"  parameterType="com.alonginfo.project.inspectionWorkOrder.entity.CheckRepairOrder" resultType="com.alonginfo.project.inspectionWorkOrder.entity.CheckRepairOrder">
+        select a.guid,a.patrol_scheme_number,a.patrol_scheme_name,a.patrol_type,a.patrol_number,
+        j.code_name county_company,c.code_name power_supply,a.voltage,d.code_name feeder2,a.feeder,e.code_name
+        patrol_types,
+        a.patrol_object,
+        (case a.patrol_status when '0' then '待派发' when '1' then ' 已派发' when '2' then ' 已接巡检' when '3'
+        then '已巡检' when '4' then '归档' when '5' then '已到达' when '6' then '巡检中'
+        when '7' then '误报' else '工单合并' end) patrol_status
+        ,date_format(a.patrol_data,'%Y-%m-%d %H:%i:%s')patrol_data,
+        date_format(a.patrol_send_data,'%Y-%m-%d %H:%i:%s')patrol_send_data,
+        a.team_id,f.code_name voltage_classes,g.code_name patrol_abnormal,a.note,i.code_name
+        subordinate_substation2,a.subordinate_substation,a.userId,a.courtsId
+        from t_yj_qzqx_patrol_scheme a
+        left join t_yj_qzqx_code c on a.power_supply = c.guid
+        left join t_yj_qzqx_code d on a.feeder = d.guid
+        left join t_yj_qzqx_code e on a.patrol_types = e.guid
+        left join t_yj_qzqx_code f on a.voltage_classes = f.guid
+        left join t_yj_qzqx_code g on a.patrol_abnormal = g.guid
+        left join t_yj_qzqx_code i on a.subordinate_substation = i.guid
+        left join t_yj_qzqx_code j on a.county_company = j.guid
+        <where>
+            1=1 and a.patrol_type=2
+            <if test="patrolStatus ==null or patrolStatus == ''">
+            <choose>
+                    <when test="activeName == '1' or activeName==1 ">
+                        and (a.patrol_status=0 or a.patrol_status=1)
+                    </when>
+                    <when test="activeName == '2' or activeName==2">
+                        and (a.patrol_status=2 or a.patrol_status=3 or a.patrol_status=5
+                        or a.patrol_status=6)
+                    </when>
+                    <when test="activeName == '3' or activeName==3 ">
+                        and (a.patrol_status=4 or a.patrol_status=7)
+                    </when>
+            </choose>
+            </if>
+            <if test="patrolStatus!=null and patrolStatus!=''">
+                and a.patrol_status=#{patrolStatus}
+            </if>
+            <if test="countyCompany !=null and countyCompany !=''">
+                and a.county_company like concat ('%',#{countyCompany},'%')
+            </if>
+            <if test="powerSupply !=null and powerSupply !=''">
+                and c.guid=#{powerSupply}
+            </if>
+            <if test="subordinateSubstation !=null and subordinateSubstation !=''">
+                and a.subordinate_substation =#{subordinateSubstation}
+            </if>
+            <if test="feeder !=null and feeder !=''">
+                and a.feeder=#{feeder}
+            </if>
+            <if test="patrolTypes !=null and patrolTypes !=''">
+                and a.patrolTypes like concat ('%',#{patrolTypes},'%')
+            </if>
+            <if test="courtsName !=null and courtsName !=''">
+                and h.courts_name like concat ('%',#{courtsName},'%')
+            </if>
+            <if test="patrolAbnormal !=null and patrolAbnormal !=''">
+                and a.patrol_abnormal = #{patrolAbnormal}
+            </if>
+            <if test="patrolSendData !=null and patrolSendData !=''">
+                and a.patrol_send_data&gt;=#{patrolSendData}
+            </if>
+            <if test="patrolSendDataEnd !=null and patrolSendDataEnd !=''">
+                and a.patrol_send_data=#{patrolSendDataEnd}
+            </if>
+            <if test="powerSupplies !=null and powerSupplies !=''">
+                and a.power_supply in (${powerSupplies})
+            </if>
+            <if test="patrolNumber !=null and patrolNumber !=''">
+                and (a.patrol_number="" OR a.patrol_number IS NULL)
+            </if>
+            <if test="suborderNumber !=null and suborderNumber !=''">
+                and a.patrol_scheme_number!=#{suborderNumber}
+            </if>
+        </where>
+        order by patrol_send_data desc
+    </select>
+
+    <select id="queryUser" resultType="java.util.Map">
+        SELECT
+        r.guid,
+        r.user_id,
+        r.user_name,
+        r.courts_number,
+        r.branch_box,
+        r.user_address,
+        k.voltage_classes,
+        e.code_name voltage_classes_name,
+        e1.code_name county_name,
+        s.courts_name
+        FROM
+        t_yj_qzqx_work_user u
+        LEFT JOIN t_yj_qzqx_user r ON u.user_id=r.user_id
+        LEFT JOIN t_yj_qzqx_patrol_scheme k ON u.work_number=k.patrol_scheme_number
+        LEFT JOIN t_yj_qzqx_code e ON e.guid=k.voltage_classes
+        LEFT JOIN t_yj_qzqx_courts s ON s.courts_number=r.courts_number
+        LEFT JOIN t_yj_qzqx_code e1 ON e1.guid=s.county
+        <where>
+            1=1
+            <if test="patrolSchemeNumber !=null and patrolSchemeNumber !=''">
+                and u.work_number=#{patrolSchemeNumber}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryCourts" resultType="java.util.Map">
+        SELECT
+        s.guid,
+        s.courts_number,
+        s.courts_name,
+        s.feeder,
+        s.power_station,
+        s.power_supply_area,
+        s.power_supply,
+        s.courts_manager,
+        s.courts_phone,
+        k.voltage_classes,
+        s.county
+        FROM t_yj_qzqx_work_courst t
+        LEFT JOIN t_yj_qzqx_courts s ON s.courts_number=t.courts_number
+        LEFT JOIN t_yj_qzqx_patrol_scheme k ON k.patrol_scheme_number=t.work_number
+        LEFT JOIN t_yj_qzqx_code e ON e.guid=s.feeder
+        LEFT JOIN t_yj_qzqx_code e1 ON e1.guid=s.power_station
+        LEFT JOIN t_yj_qzqx_code e2 ON e2.guid=s.power_supply
+        LEFT JOIN t_yj_qzqx_code e4 ON e4.guid=k.voltage_classes
+        LEFT JOIN t_yj_qzqx_code e3 ON e3.guid=s.county
+        <where>
+            1=1
+            <if test="patrolSchemeNumber !=null and patrolSchemeNumber !=''">
+                and t.work_number=#{patrolSchemeNumber}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryTeamInfo" resultType="java.util.Map">
+        SELECT name,phone FROM t_yj_gzqx_qxdy
+        <where>
+            1=1
+            <if test="teamId !=null and teamId !=''">
+                and team_id=#{teamId}
+            </if>
+            <if test="station !=null and station !=''">
+                <choose>
+                    <when test="station>0">
+                        and station=#{station}
+                    </when>
+                    <otherwise>
+                        and station!="24"
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </select>
+    <select id="queryVehicle" resultType="java.util.Map">
+        SELECT numbe_repair_car FROM t_yj_gzqx_qxc
+        <where>
+            1=1
+            <if test="teamId !=null and teamId !=''">
+                and team_id=#{teamId}
+            </if>
+        </where>
+    </select>
+
+    <update id="operation">
+        UPDATE t_yj_qzqx_patrol_scheme
+        <trim prefix="set" suffixOverrides=",">
+            <if test="patrolStatus!=null and patrolStatus !=''">
+                patrol_status=#{patrolStatus},
+            </if>
+            <if test="patrolSendData!=null and patrolSendData !=''">
+                patrol_send_data=now(),
+            </if>
+        </trim>
+        WHERE patrol_scheme_number = #{patrolSchemeNumber};
+    </update>
+
+    <update id="suborder">
+        <foreach collection="list" item="item" index="index" separator=";">
+            UPDATE t_yj_qzqx_patrol_scheme
+            <set>
+                <if test="item.parentNumber != null">
+                    parent_number = "${item.parentNumber}",
+                </if>
+                patrol_status = "11"
+            </set>
+            WHERE patrol_scheme_number ='${item.patrolSchemeNumber}'
+        </foreach>
+    </update>
+
+    <select id="export" resultType="com.alonginfo.project.inspectionWorkOrder.entity.CheckRepairOrder">
+         select
+            a.patrol_scheme_name,
+	        a.patrol_scheme_number,
+            a.county_company,
+	        b.code_name power_supply,
+	        c.code_name subordinate_substation,
+	        d.code_name feeder,
+	        e.code_name patrol_types,
+	        a.patrol_object,
+	        f.code_name patrol_abnormal,
+	        a.patrol_send_data,
+	        (case a.patrol_status when '1' then ' 未巡检或未派发' when '2' then '  已接巡检' when '3' then '已巡检' else '归档' end)as patrol_status
+	    from
+	        t_yj_qzqx_patrol_scheme a
+	        left join t_yj_qzqx_code b on b.guid = a.power_supply
+	        left join t_yj_qzqx_code c on a.subordinate_substation = c.guid
+	        left join t_yj_qzqx_code d on a.feeder = d.guid
+	        left join t_yj_qzqx_code e on a.patrol_types = e.guid
+	        left join t_yj_qzqx_code f on a.patrol_abnormal = f.guid
+	    where   a.patrol_type=2
+        <if test="patrolStatus != null and patrolStatus !=''">
+             a.patrol_status=#{patrolStatus}
+        </if>
+    </select>
+
+
+</mapper>

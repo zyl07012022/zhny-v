@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.component.mapper.DropMapper">
+
+    <select id="queryStList" resultType="com.alonginfo.project.component.entities.DropParams">
+        select id value,name label from D5000.substation
+         where 1=1
+         <if test="query!=null and query !=''">
+             and name like concat('%',#{query},'%')
+         </if>
+         order by id
+    </select>
+    <select id="queryFeederList" resultType="com.alonginfo.project.component.entities.DropParams">
+        select a.id value,a.name label from D5000.dms_feeder_device a
+        inner join D5000.substation b on a.st_id=b.id
+         <where>
+             1=1
+             <if test="value !=null and value !=''">
+               and  b.name=#{value}
+             </if>
+             <if test="query !=null and query !=''">
+                 and a.name like concat('%',#{query},'%')
+             </if>
+         </where>
+    </select>
+    <select id="queryDeviceList" resultType="com.alonginfo.project.component.entities.DropParams">
+        select a.id value,a.name label from ${tableNo} a
+        inner join D5000.dms_feeder_device b on a.feeder_id = b.id
+        <where>
+            1=1
+            <if test="feederName !=null and feederName !=''">
+                and  b.name=#{feederName}
+            </if>
+            <if test="query !=null and query !=''">
+                and a.name like concat('%',#{query},'%')
+            </if>
+        </where>
+    </select>
+    <select id="queryOrgId" resultType="java.util.LinkedHashMap">
+        SELECT ID,NAME,FUNC_TYPE,PARENT_ID FROM OSP.ISC_BASEORG WHERE NAME = '深圳市'
+    </select>
+    <select id="queryParentId" resultType="java.util.Map">
+        SELECT ID,NAME,FUNC_TYPE,PARENT_ID FROM OSP.ISC_BASEORG WHERE PARENT_ID=#{parent_id}
+    </select>
+</mapper>

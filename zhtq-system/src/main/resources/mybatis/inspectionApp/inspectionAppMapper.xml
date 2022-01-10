@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.inspectionApp.mapper.InspectionAppMapper">
+    <select id="selectInspection" resultType="java.util.Map">
+        SELECT
+        patrol_scheme_number patrolSchemeNumber,
+        patrol_type patrolType,
+        CASE WHEN patrol_type=1 THEN '计划巡检' ELSE '异常巡检' END AS patrolTypeName,
+        patrol_types patrolTypes,
+        patrol_object patrolObject,
+        DATE_FORMAT(patrol_send_data,'%Y-%m-%d %H:%i:%s') patrolSendData,
+        source,
+        patrol_scheme_name patrolSchemeName,
+        subordinate_substation subordinateSubstation,
+        patrol_address patrolAddress,
+        feeder,
+        note,
+        patrol_status patrolStatus,
+        DATE_FORMAT(patrol_data,'%Y-%m-%d %H:%i:%s')patrolData,
+        power_supply powerSupply,
+        point_name pointName,
+        point_site pointSite,
+        patrol_abnormal patrolAbnormal,
+        e1.code_name patrolTypesName,
+        e2.code_name powerSupplyName,
+        e3.code_name patrolAbnormalName,
+        e4.code_name sourceName,
+        CASE WHEN patrol_status=2 THEN '已派工'
+        WHEN patrol_status=5 THEN '已到达'
+        WHEN patrol_status=6 THEN '巡检中'
+        WHEN patrol_status=3 THEN '已完成'
+        ELSE '其它' END patrolStatusName
+        FROM
+        t_yj_qzqx_patrol_scheme s
+        LEFT JOIN t_yj_qzqx_code e1 ON e1.guid=s.patrol_types
+        LEFT JOIN t_yj_qzqx_code e2 ON e2.guid=s.power_supply
+        LEFT JOIN t_yj_qzqx_code e3 ON e3.guid=s.patrol_abnormal
+        LEFT JOIN t_yj_qzqx_code e4 ON e4.guid=s.source
+        <where>
+            1=1
+            <if test="patrolSendData !=null and patrolSendData !=''">
+                and DATE_SUB(CURDATE(), INTERVAL ${patrolSendData} DAY) &lt;= DATE(patrol_send_data)
+            </if>
+        </where>
+        ORDER BY patrol_send_data DESC
+    </select>
+</mapper>

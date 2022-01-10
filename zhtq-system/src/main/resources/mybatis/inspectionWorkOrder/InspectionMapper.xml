@@ -1,0 +1,584 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.inspectionWorkOrder.mapper.InspectionMapper">
+
+    <select id="getInspection" parameterType="com.alonginfo.project.inspectionWorkOrder.entity.CheckRepairOrder" resultType="java.util.Map">
+        select
+            e.patrol_scheme_name,
+            e.patrol_scheme_number,
+            e.county_company,
+            e2.code_name power_supply,
+            e3.code_name subordinate_substation,
+            e4.code_name feeder,
+            e5.code_name patrol_types,
+            e.patrol_object,
+            e.patrol_number,
+            e.team_id,
+            e6.code_name voltage_classes,
+            e.note,
+            e.voltage,
+            e.power_supply power_supply1,
+            e.subordinate_substation subordinate_substation1,
+            e.feeder feeder1,
+            e.patrol_types patrol_types1,
+            e.voltage_classes voltage_classes1,
+            e.guid,
+             DATE_FORMAT(e.patrol_send_data,'%Y-%m-%d %T') patrolSendData,
+            (case e.patrol_status when '0' then '待派发'
+            when '1' then ' 已派发' when '2' then '  已接巡检' when '3' then '已巡检'
+            when '4' then '归档' when '5' then '已到达' when '6' then '巡检中' when '7' then '误报'
+            else '工单合并' end)as patrol_status,
+            e.userId,
+            e.courtsId,
+            e.photo_scene photoScene
+        from
+            t_yj_qzqx_patrol_scheme e
+        left join t_yj_qzqx_code e2 on e.power_supply = e2.guid
+        left join t_yj_qzqx_code e3 on e.subordinate_substation = e3.guid
+        left join t_yj_qzqx_code e4 on e.feeder = e4.guid
+        left join t_yj_qzqx_code e5 on e.patrol_types = e5.guid
+        left join t_yj_qzqx_code e6 on e.voltage_classes = e6.guid
+        <where>
+            1=1
+                and e.patrol_type=1
+            <if test="activeName != null and activeName !='' and patrolStatus=='' ">
+                <choose>
+                    <when test="activeName == 'first'">
+                        and (e.patrol_status=0 or e.patrol_status=1)
+                    </when>
+                    <when test="activeName == 'second'">
+                        and (e.patrol_status=2 or e.patrol_status=3 or e.patrol_status=5
+                        or e.patrol_status=6)
+                    </when>
+                    <when test="activeName == 'third'">
+                        and e.patrol_status=4 or e.patrol_status=7
+                    </when>
+                </choose>
+            </if>
+            <if test="patrolStatus!=null and patrolStatus!=''">
+                and e.patrol_status=#{patrolStatus}
+            </if>
+            <if test="countyCompany != null and countyCompany !='' ">
+                and e.county_company=#{countyCompany}
+            </if>
+            <if test="powerSupply != null and powerSupply !='' ">
+                and e.power_supply=#{powerSupply}
+            </if>
+            <if test="subordinateSubstation != null and subordinateSubstation !='' ">
+                and e.subordinate_substation=#{subordinateSubstation}
+            </if>
+            <if test="feeder != null and feeder !='' ">
+                and e.feeder=#{feeder}
+            </if>
+            <if test="patrolSendData !=null and patrolSendData !=''">
+                and e.patrol_send_data&gt;=#{patrolSendData}
+            </if>
+            <if test="patrolSendDataEnd !=null and patrolSendDataEnd !=''">
+                and e.patrol_send_data=#{patrolSendDataEnd}
+            </if>
+            <if test="patrolTypes != null and patrolTypes !='' ">
+                and e.patrol_types like  concat ('%',#{patrolTypes},'%')
+            </if>
+        </where>
+        order by patrol_send_data desc
+    </select>
+
+    <select id="queryUser"  resultType="java.util.Map">
+        select
+        r.user_name,
+				r.user_id,
+				s.courts_name ,
+				r.branch_box,
+				e1.code_name voltage_classes,
+				e2.code_name county,
+				r.user_address
+        from
+            t_yj_qzqx_work_user u
+        left join t_yj_qzqx_user r on u.user_id=r.user_id
+        left join t_yj_qzqx_patrol_scheme e on e.patrol_scheme_number=u.work_number
+		left join t_yj_qzqx_courts s on s.courts_number = r.courts_number
+		left join t_yj_qzqx_code e1 on e1.guid = e.voltage_classes
+		left join t_yj_qzqx_code e2 on e2.guid = s.county
+        <where>
+            1=1
+            and e.patrol_type=1
+            <if test="patrolSchemeNumber !=null and patrolSchemeNumber !=''">
+                and e.patrol_scheme_number=#{patrolSchemeNumber}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryCourts" resultType="java.util.Map">
+        select
+	        s.courts_name,
+	        s.feeder,
+	        s.power_station,
+	        s.power_supply_area,
+	        s.power_supply,
+	        e1.code_name voltage_classes,
+	        s.county,
+	        s.courts_manager,
+	        s.courts_phone
+        from
+            t_yj_qzqx_work_courst t
+        left join t_yj_qzqx_courts s on s.courts_number = t.courts_number
+        left join t_yj_qzqx_patrol_scheme e on e.patrol_scheme_number = t.work_number
+        left join t_yj_qzqx_code e1 on e1.guid = e.voltage_classes
+        <where>
+            1=1
+            and e.patrol_type=1
+            <if test="patrolSchemeNumber !=null and patrolSchemeNumber !=''">
+                and e.patrol_scheme_number=#{patrolSchemeNumber}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryDispatch" resultType="java.util.Map">
+        select
+	        e1.code_name power_supply,
+	        y.name,
+	        y.phone,
+	        e.patrol_scheme_number,
+	        e.patrol_status,
+        DATE_FORMAT(e.patrol_send_data,'%Y-%m-%d %T') patrol_send_data,
+	        c.numbe_repair_car,
+	        e.voltage,
+	        e2.code_name voltage_classes,
+	        e.patrol_object,
+	        e.note,
+	        e.userId,
+	        e.courtsId
+        from
+            t_yj_qzqx_patrol_scheme e
+        left join t_yj_gzqx_qxdy y on y.team_id = e.team_id
+        left join t_yj_qzqx_code e1 on e1.guid = e.power_supply
+        left join t_yj_gzqx_qxc c on c.team_id = e.team_id
+        left join t_yj_qzqx_code e2 on e2.guid = e.voltage_classes
+        <where>
+            1=1
+            and e.patrol_type=1
+            <if test="patrolSchemeNumber !=null and patrolSchemeNumber !=''">
+                and e.patrol_scheme_number=#{patrolSchemeNumber}
+            </if>
+            <if test="station !=null and station !=''">
+                and y.station=#{station}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryDispatchOther" resultType="java.util.Map">
+        select
+        e1.code_name power_supply,
+        y.name,
+        y.phone,
+        e.patrol_scheme_number,
+        e.patrol_status,
+        DATE_FORMAT(e.patrol_send_data,'%Y-%m-%d %T') patrol_send_data,
+        c.numbe_repair_car,
+        e.voltage,
+        e2.code_name voltage_classes,
+        e.patrol_object,
+        e.note
+        from
+        t_yj_qzqx_patrol_scheme e
+        left join t_yj_gzqx_qxdy y on y.team_id = e.team_id
+        left join t_yj_qzqx_code e1 on e1.guid = e.power_supply
+        left join t_yj_gzqx_qxc c on c.team_id = e.team_id
+        left join t_yj_qzqx_code e2 on e2.guid = e.voltage_classes
+        <where>
+            1=1
+            and e.patrol_type=1
+            and y.station != '7'
+            <if test="patrolSchemeNumber !=null and patrolSchemeNumber !=''">
+                and e.patrol_scheme_number=#{patrolSchemeNumber}
+            </if>
+        </where>
+    </select>
+
+    <insert id="planAdd" parameterType="com.alonginfo.project.inspectionWorkOrder.entity.CheckRepairOrder">
+        insert into t_yj_qzqx_patrol_scheme(
+            guid
+        <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+            ,patrol_scheme_number
+        </if>
+        <if test="patrolSchemeName!=null and patrolSchemeName!=''">
+        ,patrol_scheme_name
+        </if>
+        <if test="patrolType!=null and patrolType!=''">
+        ,patrol_type
+        </if>
+        <if test="countyCompany!=null and countyCompany!=''">
+        ,county_company
+        </if>
+        <if test="powerSupply!=null and powerSupply!=''">
+        ,power_supply
+        </if>
+        <if test="subordinateSubstation!=null and subordinateSubstation!=''">
+        ,subordinate_substation
+        </if>
+        <if test="feeder!=null and feeder!=''">
+        ,feeder
+        </if>
+        <if test="patrolTypes!=null and patrolTypes!=''">
+        ,patrol_types
+        </if>
+        <if test="patrolObject!=null and patrolObject!=''">
+        ,patrol_object
+        </if>
+        <if test="patrolStatus!=null and patrolStatus!=''">
+        ,patrol_status
+        </if>
+        ,patrol_data
+        <if test="patrolNumber!=null and patrolNumber!=''">
+        ,patrol_number
+        </if>
+        <if test="voltageClasses!=null and voltageClasses!=''">
+        ,voltage_classes
+        </if>
+        <if test="patrolAbnormal!=null and patrolAbnormal!=''">
+        ,patrol_abnormal
+        </if>
+        <if test="note!=null and note!=''">
+        ,note
+        </if>
+        <if test="voltage!=null and voltage!=''">
+            ,voltage
+        </if>
+        <if test="source!=null and source!=''">
+            ,source
+        </if>
+        <if test="pointSite!=null and pointSite!=''">
+            ,point_site
+        </if>
+        ,patrol_send_data
+        )values(
+            null
+        <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+            ,#{patrolSchemeNumber}
+        </if>
+        <if test="patrolSchemeName!=null and patrolSchemeName!=''">
+            ,#{patrolSchemeName}
+        </if>
+        <if test="patrolType!=null and patrolType!=''">
+           ,CAST(#{patrolType} AS UNSIGNED)
+        </if>
+        <if test="countyCompany!=null and countyCompany!=''">
+            ,#{countyCompany}
+        </if>
+        <if test="powerSupply!=null and powerSupply!=''">
+            ,CAST(#{powerSupply} AS UNSIGNED)
+        </if>
+        <if test="subordinateSubstation!=null and subordinateSubstation!=''">
+            ,#{subordinateSubstation}
+        </if>
+        <if test="feeder!=null and feeder!=''">
+            ,#{feeder}
+        </if>
+        <if test="patrolTypes!=null and patrolTypes!=''">
+            ,#{patrolTypes}
+        </if>
+        <if test="patrolObject!=null and patrolObject!=''">
+            ,#{patrolObject}
+        </if>
+        <if test="patrolStatus!=null and patrolStatus!=''">
+            ,#{patrolStatus}
+        </if>
+            ,now()
+        <if test="patrolNumber!=null and patrolNumber!=''">
+            ,#{patrolNumber}
+        </if>
+        <if test="voltageClasses!=null and voltageClasses!=''">
+            ,CAST(#{voltageClasses} AS UNSIGNED)
+        </if>
+        <if test="patrolAbnormal!=null and patrolAbnormal!=''">
+            ,#{patrolAbnormal}
+        </if>
+        <if test="note!=null and note!=''">
+            ,#{note}
+        </if>
+        <if test="voltage!=null and voltage!=''">
+            ,#{voltage}
+        </if>
+        <if test="source!=null and source!=''">
+            ,#{source}
+        </if>
+        <if test="pointSite!=null and pointSite!=''">
+            ,#{pointSite}
+        </if>
+        ,now()
+        )
+    </insert>
+
+    <update id="planChange">
+        update
+            t_yj_qzqx_patrol_scheme
+         set
+            patrol_scheme_number=#{patrolSchemeNumber},
+            patrol_scheme_name=#{patrolSchemeName},
+            county_company=#{countyCompany},
+            power_supply=#{powerSupply},
+            subordinate_substation=#{subordinateSubstation},
+            feeder=#{feeder},
+            patrol_types=#{patrolTypes},
+            patrol_object=#{patrolObject},
+            patrol_number=#{patrolNumber},
+            team_id=#{teamId},
+            voltage_classes=#{voltageClasses},
+            note=#{note},
+            voltage=#{voltage}
+        where
+            guid=#{guid}
+        </update>
+
+    <delete id="deleteBypatrolSchemeNumber">
+        delete from t_yj_qzqx_patrol_scheme where patrol_scheme_number=#{patrolSchemeNumber}
+    </delete>
+
+    <update id="operate">
+        update
+            t_yj_qzqx_patrol_scheme
+         set
+            patrol_status=1,
+            patrol_number=#{patrolNumber},
+            patrol_send_data=#{patrolSendData}
+        where
+            patrol_scheme_number=#{patrolSchemeNumber}
+    </update>
+
+    <update id="archived">
+        update
+            t_yj_qzqx_patrol_scheme
+         set
+            patrol_status=4
+        where
+            patrol_scheme_number=#{patrolSchemeNumber}
+    </update>
+
+    <select id="export" resultType="com.alonginfo.project.inspectionWorkOrder.entity.Inspection">
+        select
+            e.patrol_scheme_name,
+	        e.patrol_scheme_number,
+            e.county_company,
+	        e1.code_name power_supply,
+	         subordinate_substation,
+	         feeder,
+	         patrol_types,
+	        e.patrol_object,
+	        feedback
+	    from
+	        t_yj_qzqx_patrol_scheme e
+	        left join t_yj_qzqx_code e1 on e1.guid = e.power_supply
+	        left join t_yj_qzqx_code e2 on e.subordinate_substation = e2.guid
+	        left join t_yj_qzqx_code e3 on e.feeder = e3.guid
+	        left join t_yj_qzqx_code e4 on e.patrol_types = e4.guid
+	    where  patrol_type=1
+        <if test="patrolStatus != null and patrolStatus !='' ">
+            <choose>
+                <when test="patrolStatus == 1">
+                    and (e.patrol_status=0 or e.patrol_status=1)
+                </when>
+                <when test="patrolStatus == 2">
+                    and (e.patrol_status=2 or e.patrol_status=3 or e.patrol_status=5
+                    or e.patrol_status=6)
+                </when>
+                <when test="patrolStatus == 3">
+                    and e.patrol_status=4
+                </when>
+                <otherwise>
+                    and e.patrol_status=#{patrolStatus}
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+
+    <insert id="addTrigonalImbalance" parameterType="com.alonginfo.project.component.entities.NotBalance">
+    insert into t_jy_qzqx_trigonal_imbalance
+    (
+        guid
+    <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+        ,patrol_scheme_number
+    </if>
+    <if test="trigonalImbalance!=null and trigonalImbalance!=''">
+        ,trigonal_imbalance
+    </if>
+    <if test="normal!=null and normal!=''">
+        ,normal
+    </if>
+    <if test="maxImbalance!=null and maxImbalance!=''">
+        ,max_imbalance
+    </if>
+    <if test="timeMaximumImbalance!=null and timeMaximumImbalance!=''">
+        ,time_maximum_imbalance
+    </if>
+    <if test="loadRatea!=null and loadRatea!=''">
+        ,load_rate_a
+    </if>
+    <if test="loadRateb!=null and loadRateb!=''">
+        ,load_rate_b
+    </if>
+    <if test="loadRatec!=null and loadRatec!=''">
+        ,load_rate_c
+    </if>
+        ,update_time
+    ) values (
+       null
+    <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+        ,#{patrolSchemeNumber}
+    </if>
+    <if test="trigonalImbalance!=null and trigonalImbalance!=''">
+        ,#{trigonalImbalance}
+    </if>
+    <if test="normal!=null and normal!=''">
+        ,#{normal}
+    </if>
+    <if test="maxImbalance!=null and maxImbalance!=''">
+        ,#{maxImbalance}
+    </if>
+    <if test="timeMaximumImbalance!=null and timeMaximumImbalance!=''">
+        ,#{timeMaximumImbalance}
+    </if>
+    <if test="loadRatea!=null and loadRatea!=''">
+        ,#{loadRatea}
+    </if>
+    <if test="loadRateb!=null and loadRateb!=''">
+        ,#{loadRateb}
+    </if>
+    <if test="loadRatec!=null and loadRatec!=''">
+        ,#{loadRatec}
+    </if>
+        ,now()
+    )
+</insert>
+<insert id="addOverloadDetail" parameterType="com.alonginfo.project.component.entities.HeavyLoad">
+    insert into t_yj_qzqx_overload_detail
+        (
+            guid
+        <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+            ,patrol_scheme_number
+        </if>
+        <if test="heavyLoad!=null and heavyLoad!=''">
+            ,heavy_load
+        </if>
+        <if test="overload!=null and overload!=''">
+            ,overload
+        </if>
+        <if test="normal!=null and normal!=''">
+            ,normal
+        </if>
+         <if test="maxImbalance!=null and maxImbalance!=''">
+            ,max_imbalance
+        </if>
+        <if test="timeMaximumImbalance!=null and timeMaximumImbalance!=''">
+            ,time_maximum_imbalance
+        </if>
+        <if test="loadRatea!=null and loadRatea!=''">
+            ,load_rate_a
+        </if>
+        <if test="loadRateb!=null and loadRateb!=''">
+            ,load_rate_b
+        </if>
+        <if test="loadRatec!=null and loadRatec!=''">
+            ,load_rate_c
+        </if>
+            ,update_time
+        )
+        values (
+           null
+        <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+            ,#{patrolSchemeNumber}
+        </if>
+        <if test="heavyLoad!=null and heavyLoad!=''">
+            ,#{heavyLoad}
+        </if>
+        <if test="overload!=null and overload!=''">
+            ,#{overload}
+        </if>
+        <if test="normal!=null and normal!=''">
+            ,#{normal}
+        </if>
+        <if test="maxImbalance!=null and maxImbalance!=''">
+            ,#{maxImbalance}
+        </if>
+        <if test="timeMaximumImbalance!=null and timeMaximumImbalance!=''">
+            ,#{timeMaximumImbalance}
+        </if>
+        <if test="loadRatea!=null and loadRatea!=''">
+            ,#{loadRatea}
+        </if>
+        <if test="loadRateb!=null and loadRateb!=''">
+            ,#{loadRateb}
+        </if>
+        <if test="loadRatec!=null and loadRatec!=''">
+            ,#{loadRatec}
+        </if>
+            ,now()
+    )
+</insert>
+    <insert id="addVoltageDetail" parameterType="com.alonginfo.project.component.entities.LowVoltage">
+        insert into t_yj_qzqx_voltage_detail
+        (
+            guid
+        <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+            ,patrol_scheme_number
+        </if>
+        <if test="teama!=null and teama!=''">
+            ,team_a
+        </if>
+        <if test="teamb!=null and teamb!=''">
+            ,team_b
+        </if>
+        <if test="teamc!=null and teamc!=''">
+            ,team_c
+        </if>
+        <if test="minv!=null and minv!=''">
+            ,min_v
+        </if>
+        <if test="timeMinimumImbalance!=null and timeMinimumImbalance!=''">
+            ,time_minimum_imbalance
+        </if>
+        <if test="loadRatea!=null and loadRatea!=''">
+            ,load_rate_a
+        </if>
+        <if test="loadRateb!=null and loadRateb!=''">
+            ,load_rate_b
+        </if>
+        <if test="loadRatec!=null and loadRatec!=''">
+            ,load_rate_c
+        </if>
+            ,update_time
+        )
+        values (
+           null
+        <if test="patrolSchemeNumber!=null and patrolSchemeNumber!=''">
+            ,#{patrolSchemeNumber}
+        </if>
+        <if test="teama!=null and teama!=''">
+            ,#{teama}
+        </if>
+        <if test="teamb!=null and teamb!=''">
+            ,#{teamb}
+        </if>
+        <if test="teamc!=null and teamc!=''">
+            ,#{teamc}
+        </if>
+        <if test="minv!=null and minv!=''">
+            ,#{minv}
+        </if>
+        <if test="timeMinimumImbalance!=null and timeMinimumImbalance!=''">
+            ,#{timeMinimumImbalance}
+        </if>
+        <if test="loadRatea!=null and loadRatea!=''">
+            ,#{loadRatea}
+        </if>
+        <if test="loadRateb!=null and loadRateb!=''">
+            ,#{loadRateb}
+        </if>
+        <if test="loadRatec!=null and loadRatec!=''">
+            ,#{loadRatec}
+        </if>
+            ,now()
+        )
+    </insert>
+</mapper>

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.inspectionWorkOrder.mapper.EarlyWarningMapper">
+    <delete id="deleteOrder" parameterType="java.lang.String">
+        delete from t_yj_ycyj_status
+        where transf_id = #{transfId}
+    </delete>
+    <select id="selectCompany" resultType="java.util.Map">
+        SELECT
+          s.guid,
+          power_company_number companyId,
+          power_supply_number supplyId,
+          e1.code_name companyName,
+          e2.code_name supplyName
+        FROM
+          t_yj_qzqx_gdgs_gds s
+          LEFT JOIN t_yj_qzqx_code e1 ON s.power_company_number=e1.guid
+          LEFT JOIN t_yj_qzqx_code e2 ON s.power_supply_number=e2.guid
+          ORDER BY power_company_number
+    </select>
+    <select id="selectPatrolNumber" resultType="java.util.Map">
+        SELECT patrol_scheme_number FROM t_yj_qzqx_patrol_scheme
+        <where>
+            patrol_type=2
+            <if test="orgName !=null and orgName !=''">
+                ${orgName}
+            </if>
+        </where>
+    </select>
+    <select id="selectAbnormal" resultType="java.util.Map">
+        SELECT count(distinct transf_id) abnormalNum,CASE code_name WHEN '三相不平衡' THEN 'sxbph'
+        WHEN '台区低压' THEN 'dqdy' ELSE 'pbzgz' END code_name
+        from t_yj_ycyj_status a
+        left join t_yj_qzqx_code b on a.patrol_abnormal = b.guid
+        <where>
+            1=1
+            <if test="orgName !=null and orgName !=''">
+                ${orgName}
+            </if>
+        </where>
+        GROUP BY patrol_abnormal
+    </select>
+    <select id="selectCourts" resultType="java.util.Map">
+        SELECT DISTINCT courts_number FROM t_yj_qzqx_work_courst
+        <where>
+            1=1
+            <if test="workNumbers !=null and workNumbers !=''">
+                and work_number in (${workNumbers})
+            </if>
+        </where>
+    </select>
+    <select id="selectManager" resultType="java.util.Map">
+        SELECT DISTINCT courts_manager FROM t_yj_qzqx_courts
+        <where>
+            1=1
+            <if test="courtsNumbers !=null and courtsNumbers !=''">
+                and courts_number in (${courtsNumbers})
+            </if>
+        </where>
+    </select>
+    <select id="selectUser" resultType="java.util.Map">
+        SELECT DISTINCT user_id FROM t_yj_qzqx_work_user
+        <where>
+            1=1
+            <if test="workNumbers !=null and workNumbers !=''">
+                and work_number in (${workNumbers})
+            </if>
+        </where>
+    </select>
+    <select id="calculationStatistics" resultType="java.util.Map">
+        SELECT count(distinct transf_id) as date,patrol_abnormal,
+        CASE code_name WHEN '三相不平衡' THEN 'sxbph' WHEN '台区低压' THEN 'dqdy' ELSE 'pbzgz' END code_name
+        FROM t_yj_ycyj_status a
+        left join t_yj_qzqx_code b on a.patrol_abnormal = b.guid
+        <where>
+            1=1
+            <if test="date !=null and date !=''">
+                and ${date}
+            </if>
+            <if test="orgName !=null and orgName !=''">
+                 ${orgName}
+            </if>
+            <if test="str !=null and str !=''">
+                and patrol_abnormal =${str}
+            </if>
+        </where>
+        group by patrol_abnormal
+    </select>
+    <select id="selectWO" resultType="java.util.Map">
+        SELECT MAX(patrol_number)number FROM t_yj_qzqx_patrol_scheme
+        <where>
+            1=1
+            <if test="date !=null and date !=''">
+                and DATE_FORMAT(patrol_data,'%Y-%m-%d')=#{date}
+            </if>
+        </where>
+    </select>
+    <select id="selectNum" resultType="java.util.Map">
+        SELECT count(distinct transf_id) courtsNumber,count(distinct areaPM_Name) managerNumber,IFNULL(sum(user_num),0)
+        userNumber
+        from t_yj_ycyj_status
+        <where>
+            1=1
+            <if test="orgName !=null and orgName !=''">
+                ${orgName}
+            </if>
+        </where>
+    </select>
+    <select id="selectAbnormalList" resultType="java.util.HashMap">
+        select t1.guid subordinate_substation2,t2.guid county_company2,t4.guid feeder2,
+        t3.guid power_supply2,t.*
+        from t_yj_ycyj_status t
+        left join t_yj_qzqx_code t1 on t.subordinate_substation = t1.code_name
+        left join t_yj_qzqx_code t2 on t.county_company = t2.code_name
+        left join t_yj_qzqx_code t3 on t.power_supply = t3.code_name
+        left join t_yj_qzqx_code t4 on t.feeder = t4.code_name
+        <where>
+            1=1
+            <if test="orgName != null and orgName != ''">
+               #{orgName}
+            </if>
+            <if test="patrolAbnormal != null and patrolAbnormal != ''">
+                and patrol_abnormal = #{patrolAbnormal}
+            </if>
+        </where>
+        order by t.device_type
+    </select>
+    <select id="selectNumList" resultType="java.util.Map">
+        select distinct transf_id from t_yj_ycyj_status
+        <where>
+            1=1
+            <if test="orgName != null and orgName != ''">
+                ${orgName}
+            </if>
+        </where>
+    </select>
+    <select id="selectNormalTr" resultType="java.lang.Integer">
+        select count(distinct a.id) from D5000.dms_tr_device a
+        inner join D5000.DMS_FEEDER_DEVICE C ON A.FEEDER_ID=C.ID
+        inner join OSP.ISC_BASEORG b on ${str}=b.NAME
+        <where>
+            1=1
+            <if test="orgId!=null and orgId!=''">
+                and b.id=#{orgId}
+            </if>
+        </where>
+    </select>
+    <select id="selectMonthList" resultType="java.util.Map">
+       SELECT
+            count( 1 ) num,
+            MONTH ( updata_time ) month
+        FROM
+            t_yj_ycyj_status
+        WHERE
+            YEAR (
+            NOW())= YEAR ( updata_time )
+              and  TO_DAYS(updata_time) &lt;= TO_DAYS(now())
+        GROUP BY
+            DATE_FORMAT( updata_time, '%Y-%m' )
+         ORDER BY  MONTH ( updata_time )
+    </select>
+    <select id="selectDateList" resultType="java.util.Map">
+         SELECT
+            count( 1 ) num,
+            DATE_FORMAT( updata_time, '%d' ) today
+        FROM
+            t_yj_ycyj_status
+        WHERE
+            DATE_FORMAT( updata_time, '%Y-%m')=DATE_FORMAT( now(), '%Y-%m' )
+        GROUP BY
+            DATE_FORMAT( updata_time, '%Y-%m-%d' )
+        ORDER BY   DATE_FORMAT( updata_time, '%d' )
+    </select>
+    <select id="queryOrgName" resultType="java.lang.String">
+        SELECT NAME FROM OSP.ISC_BASEORG
+        <where>
+            1=1
+            <if test="orgId!=null and orgId!=''">
+            and ID=#{orgId}
+            </if>
+        </where>
+
+    </select>
+    <update id="createWO">
+        UPDATE t_yj_qzqx_patrol_scheme
+        <trim prefix="set" suffixOverrides=",">
+            <if test="patrolNumber!=null">patrol_number=#{patrolNumber},</if>
+            patrol_data=now()
+        </trim>
+        WHERE patrol_scheme_number = #{patrolSchemeNumber};
+    </update>
+    <update id="upDeviceStatus">
+        update t_yj_ycyj_status set
+        device_type = #{deviceType}
+        where ID = #{ID}
+    </update>
+</mapper>

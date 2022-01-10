@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.alarmOrder.mapper.AlarmOrderMapper">
+
+    <!-- 查询 三项 平衡/不平衡 时间-->
+    <select id="selectUnbalanceTime" resultType="java.util.Map" >
+        SELECT
+            IF(t1.sxbph > 0.25 AND CONTINUE_TIME > 120,SUM(CONTINUE_TIME),0) bphtime,
+            IF(0.25>t1.sxbph,SUM(CONTINUE_TIME),0) phtime
+        FROM
+            (SELECT
+                 TRANSF_ID,
+                 ((GREATEST( IA, IB, IC )- LEAST( IA, IB, IC ))/ LEAST( IA, IB, IC )) sxbph,CONTINUE_TIME
+             FROM t_yj_ycyj_device d
+             WHERE ROUND( (PA + PB + PC) / RATED_CAPACITY, 2 )>0.5) t1
+        WHERE TRANSF_ID =#{transf_id}
+    </select>
+
+    <!--  最大三项不平衡及数据时间  -->
+    <select id="selectMaxUnbalance" resultType="java.util.Map">
+        SELECT
+            IFNULL(ROUND(MAX((GREATEST( IA, IB, IC )- LEAST( IA, IB, IC ))/ LEAST( IA, IB, IC )),2),0) MAXBPH ,UPDATE_TIME
+        FROM
+            t_yj_ycyj_device
+        WHERE TRANSF_ID = #{transf_id}
+    </select>
+
+    <!--  三项最大负载率  -->
+    <select id="selectMaxLoad" resultType="java.util.Map">
+        SELECT
+            TRANSF_ID,
+            IFNULL(MAX(ROUND( PA / RATED_CAPACITY, 2 )),0) MAXFZA,
+            IFNULL(MAX(ROUND( PB / RATED_CAPACITY, 2 )),0) MAXFZB,
+            IFNULL(MAX(ROUND( PC / RATED_CAPACITY, 2 )),0) MAXFZC
+        FROM
+            t_yj_ycyj_device
+        WHERE TRANSF_ID = #{transf_id}
+    </select>
+
+    <!--  查询 过载/重载/正常时间 -->
+    <select id="selectLoadTime" resultType="java.util.Map" >
+        SELECT
+            IF(t1.FZ>1 AND t1.CONTINUE_TIME >120,SUM(CONTINUE_TIME),0) GZTIME,
+            IF(1>=t1.FZ>=0.8 AND t1.CONTINUE_TIME >120,SUM(CONTINUE_TIME),0) CZTIME,
+            IF(0.8>t1.FZ ,SUM(CONTINUE_TIME),0) ZCTIME
+        FROM
+            (SELECT
+                 TRANSF_ID,
+                 ROUND((PA+PB+PC)/ RATED_CAPACITY,2 ) FZ,
+                 CONTINUE_TIME
+             FROM t_yj_ycyj_device) t1
+        WHERE TRANSF_ID = #{transf_id}
+    </select>
+
+    <!-- 查询最低及电压/时刻  -->
+    <select id="selectMinVolt" resultType="java.util.Map" >
+        SELECT
+            IFNULL(LEAST(MIN( UA ),MIN( UB ),MIN( UC )),0) MIN_U,UPDATE_TIME
+        FROM
+            t_yj_ycyj_device
+        WHERE TRANSF_ID = #{transf_id}
+    </select>
+
+    <!--  查询当天低电压时间  -->
+    <select id="selectLowVoltCnt" resultType="java.util.Map">
+        SELECT
+            t1.TRANSF_ID,
+            IF(t1.YA>0.1,SUM(t1.CONTINUE_TIME),0) lowVoltA,
+            IF(t1.YB>0.1,SUM(t1.CONTINUE_TIME),0) lowVoltB,
+            IF(t1.YC>0.1,SUM(t1.CONTINUE_TIME),0) lowVoltC
+        FROM
+            (SELECT
+                 TRANSF_ID,CONTINUE_TIME,
+                 IF(220>UA,ROUND(( 220-UA )/ 220,2), 0 ) YA,
+                 IF(220>UB,ROUND(( 220-UB )/ 220,2), 0 ) YB,
+                 IF(220>UC,ROUND(( 220-UC )/ 220,2), 0 ) YC
+             FROM
+                 t_yj_ycyj_device
+             WHERE CONTINUE_TIME > 60) t1
+        WHERE TRANSF_ID = #{transf_id}
+    </select>
+
+    <!--  查询当天高电压时间  -->
+    <select id="selectHighVoltCnt" resultType="java.util.Map">
+        SELECT
+            t1.TRANSF_ID,
+            IF(t1.YA>0.07,SUM(t1.CONTINUE_TIME),0) highVoltA,
+            IF(t1.YB>0.07,SUM(t1.CONTINUE_TIME),0) highVoltB,
+            IF(t1.YC>0.07,SUM(t1.CONTINUE_TIME),0) highVoltC
+        FROM
+            (SELECT
+                 TRANSF_ID,CONTINUE_TIME,
+                 IF(UA>220,ROUND((UA - 220)/ 220,2), 0 ) YA,
+                 IF(UB>220,ROUND((UB - 220)/ 220,2), 0 ) YB,
+                 IF(UC>220,ROUND((UC - 220)/ 220,2), 0 ) YC
+             FROM
+                 t_yj_ycyj_device
+             WHERE CONTINUE_TIME > 60) t1
+        WHERE TRANSF_ID = #{transf_id}
+    </select>
+
+    <select id="selectDeviceData" resultType="com.alonginfo.project.alarmOrder.entity.YcyjDevice">
+        SELECT
+            ID,TRANSF_ID,TRANSF_NAME,FEEDER_ID,FEEDER_NAME,POWER_COMPANY,POWER_SUPPLY,
+            UA, UB, UC, IA, IB, IC, PA, PB, PC, RATED_CAPACITY, CONTINUE_TIME, UPDATE_TIME
+        FROM
+            t_yj_ycyj_device
+        ORDER BY UPDATE_TIME DESC LIMIT 1
+    </select>
+
+    <insert id="saveErrorStatus" parameterType="com.alonginfo.project.alarmOrder.entity.DeviceStatus">
+        INSERT INTO
+            t_yj_ycyj_status (subordinate_substation,county_company,power_supply,feeder,
+                transf_name,tg_id,transf_id,patrol_abnormal,areaPM_Name,user_num,
+                updata_time,tg_name,error_type,load_rate_a,load_rate_b,load_rate_c,max_imbalance,
+                time_maximum_imbalance,min_v,min_volt_time,volt_rate_a,volt_rate_b,volt_rate_c,
+                trigonal_imbalance,trigonal_nomal,heavy_load,overload,normal)
+        VALUES (#{subordinate_substation},#{county_company},#{power_supply},#{feeder},
+                #{transf_name},#{tg_id},#{transf_id},#{patrol_abnormal},#{areaPM_Name},#{user_num},
+                #{updata_time},#{tg_name},#{error_type},#{load_rate_a},#{load_rate_b},#{load_rate_c},#{max_imbalance},
+                #{time_maximum_imbalance},#{min_v},#{min_volt_time},#{volt_rate_a},#{volt_rate_b},#{volt_rate_c},
+                #{trigonal_imbalance}, #{trigonal_nomal},#{heavy_load},#{overload},#{normal}
+        )
+    </insert>
+    <insert id="insertYcStatus">
+          INSERT INTO
+            t_yj_ycyj_status (device_type,subordinate_substation,county_company,power_supply,feeder,
+                transf_name,tg_id,transf_id,patrol_abnormal,areaPM_Name,user_num,error_type
+                updata_time)
+        VALUES (0,#{subordinate_substation},#{county_company},#{power_supply},#{feeder},
+                #{transf_name},#{tg_id},#{transf_id},#{patrol_abnormal},#{areaPM_Name},#{user_num},#{error_type},
+                #{updata_time}
+        )
+    </insert>
+
+
+</mapper>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.alonginfo.project.alarmOrder.mapper.TrWaringDataMapper">
+
+    <select id="queryTrList" resultType="java.util.HashMap">
+                select
+                t1.ID TRANSF_ID    ,
+                t1.NAME TRANSF_NAME,
+                T1.FEEDER_ID       ,
+                T2.NAME FEEDER_NAME,
+                SUBSTR(t1.NAME, 0, INSTR(t1.NAME, '#', 1, 1)-1)POWER_COMPANY,
+                SUBSTR(t1.NAME, 0, INSTR(t1.NAME, '#', 1, 1)-1)POWER_SUPPLY,
+                t1.UA,
+                t1.UB,
+                t1.UC,
+                t1.IA,
+                t1.IB,
+                t1.IC,
+                t1.PA,
+                t1.PB,
+                t1.PC,
+                t1.S0_L RATED_CAPACITY,
+                t1.P3,
+                t1.Q3
+
+        from
+                D5000.dms_tr_device t1
+        inner join D5000.DMS_FEEDER_DEVICE t2
+        ON
+                t1.FEEDER_ID=t2.ID
+    </select>
+</mapper>

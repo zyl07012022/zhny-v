@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.alonginfo.project.alarmOrder.mapper.ByqInfoMapper">
+
+    <update id="updateBygInfo">
+        UPDATE t_yj_byqgz_info
+        <trim prefix="set" suffixOverrides=",">
+            <if test="transfName!=null and transfName !=''">transf_name=#{transfName},</if>
+            <if test="errorType!=null and errorType !=''">error_type=#{errorType},</if>
+            <if test="feederId!=null and feederId !=''">feeder_id=#{feederId},</if>
+            <if test="feederName!=null and feederName !=''">feeder_name=#{feederName},</if>
+            <if test="powerCompany!=null and powerCompany !=''">power_company=#{powerCompany},</if>
+            <if test="powerSupply!=null and powerSupply !=''">power_supply=#{powerSupply},</if>
+            <if test="tgId!=null and tgId !=''">tg_id=#{tgId},</if>
+            <if test="tgName!=null and tgName !=''">tg_name=#{tgName},</if>
+            <if test="areaPMName!=null and areaPMName !=''">areaPM_Name=#{areaPMName},</if>
+            <if test="userNum!=null and userNum !=''">user_num=#{userNum},</if>
+            <if test="durTime!=null and durTime !=''">durTime=#{durTime},</if>
+            <if test="updateTime!=null and updateTime !=''">update_time=now(),</if>
+        </trim>
+        WHERE transf_id = #{transfId} and patrol_abnormal= #{patrolAbnormal}
+    </update>
+
+    <insert id="insertBygInfo" parameterType="com.alonginfo.project.alarmOrder.entity.ByqInfo">
+        insert into t_yj_byqgz_info(
+            Id
+        <if test="transfId!=null and transfId!=''">
+            ,transf_id
+        </if>
+        <if test="transfName!=null and transfName!=''">
+            ,transf_name
+        </if>
+        <if test="errorType!=null and errorType!=''">
+            ,error_type
+        </if>
+        <if test="patrolAbnormal!=null and patrolAbnormal!=''">
+            ,patrol_abnormal
+        </if>
+        <if test="feederId!=null and feederId!=''">
+            ,feeder_id
+        </if>
+        <if test="feederName!=null and feederName!=''">
+            ,feeder_name
+        </if>
+        <if test="powerCompany!=null and powerCompany!=''">
+            ,power_company
+        </if>
+        <if test="powerSupply!=null and powerSupply!=''">
+            ,power_supply
+        </if>
+        <if test="tgId!=null and tgId!=''">
+            ,tg_id
+        </if>
+        <if test="tgName!=null and tgName!=''">
+            ,tg_name
+        </if>
+        <if test="areaPMName!=null and areaPMName!=''">
+            ,areaPM_Name
+        </if>
+        <if test="userNum!=null and userNum!=''">
+            ,user_num
+        </if>
+        <if test="durTime!=null and durTime!=''">
+            ,durTime
+        </if>
+         ,update_time
+        )values(
+            #{Id}
+        <if test="transfId!=null and transfId!=''">
+            ,#{transfId}
+        </if>
+        <if test="transfName!=null and transfName!=''">
+            ,#{transfName}
+        </if>
+        <if test="errorType!=null and errorType!=''">
+            ,#{errorType}
+        </if>
+        <if test="patrolAbnormal!=null and patrolAbnormal!=''">
+            ,#{patrolAbnormal}
+        </if>
+        <if test="feederId!=null and feederId!=''">
+            ,#{feederId}
+        </if>
+        <if test="feederName!=null and feederName!=''">
+            ,#{feederName}
+        </if>
+        <if test="powerCompany!=null and powerCompany!=''">
+            ,#{powerCompany}
+        </if>
+        <if test="powerSupply!=null and powerSupply!=''">
+            ,#{powerSupply}
+        </if>
+        <if test="tgId!=null and tgId!=''">
+            ,#{tgId}
+        </if>
+        <if test="tgName!=null and tgName!=''">
+            ,#{tgName}
+        </if>
+        <if test="areaPMName!=null and areaPMName!=''">
+            ,#{areaPMName}
+        </if>
+        <if test="userNum!=null and userNum!=''">
+            ,#{userNum}
+        </if>
+        <if test="durTime!=null and durTime!=''">
+            ,#{durTime}
+        </if>
+        ,now()
+        )
+    </insert>
+
+    <delete id="removeBygInfo" parameterType="java.util.Map">
+        delete from t_yj_byqgz_info where transf_id = #{transfId} and patrol_abnormal = #{patrolAbnormal}
+    </delete>
+</mapper>

@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.gutian.mapper.GutianAppMapper">
+
+    <!--当前园区用电功率 实时-->
+    <select id="getDqyqgl" resultType="java.math.BigDecimal">
+        select
+            (
+                select sum(active_power) from cps_power
+                where ammeter_id  in (SELECT 	ammeter_id FROM 	cps_building_group WHERE scene_id = #{sceneId})
+                and  time = ( select max(time)  from cps_power where ammeter_id  in (SELECT ammeter_id FROM cps_building_group WHERE scene_id = #{sceneId} )  )
+            )
+            / (SELECT 	case count(1) when 0 then 1 else count(1)  end  FROM 	cps_building_group WHERE scene_id = #{sceneId} )
+    </select>
+
+    <!--当前园区累积能耗  当年-->
+    <select id="getDqyqljnh" resultType="java.math.BigDecimal">
+           select sum(maxval-minval) from
+            (
+                select ammeter_id , max(ammeter_value) maxval ,min(ammeter_value) minval from cps_use_electricity
+                where ammeter_id IN ( SELECT 	ammeter_id FROM cps_building_group WHERE 	scene_id = #{sceneId}	)
+              and DATE_FORMAT(time,'%Y') = DATE_FORMAT(SYSDATE(),'%Y')
+                group by ammeter_id
+            ) a
+    </select>
+
+
+    <!-- 指定月访问人数-->
+    <select id="getCountreception"  resultType="java.math.BigDecimal">
+      select sum(reception)  from  cps_reception
+        where scene_id=#{sceneId}
+        and  DATE_FORMAT(date,'%Y-%m') = #{date}
+    </select>
+
+    <!-- 面积 -->
+    <select id="getSceneAcreage"  resultType="java.math.BigDecimal">
+       select scene_acreage from cps_scene where scene_id=#{sceneId}
+    </select>
+
+    <!-- 指定月用电量 -->
+    <select id="getSumAmmeterValue"  resultType="java.math.BigDecimal">
+       select max(ammeter_value)-min(ammeter_value) from cps_use_electricity
+       where ammeter_id  in (SELECT ammeter_id FROM cps_building_group WHERE scene_id = #{sceneId} )
+      and DATE_FORMAT(date,'%Y-%m') =#{date}
+    </select>
+    
+
+
+
+    <!--今日用电量-->
+    <select id="getJrydl" resultType="map">
+      select ammeter_id,max(ammeter_value)-min(ammeter_value) as val from cps_use_electricity
+        where ammeter_id  in (select ammeter_id from   cps_building_group where   scene_id= #{sceneId} )
+        and DATE_FORMAT(time,'%Y-%m-%d') = DATE_FORMAT(sysdate(),'%Y-%m-%d')
+        group by ammeter_id
+    </select>
+
+    <!--当前用电功率-->
+    <select id="getDqydgl" resultType="map">
+     select ammeter_id,active_power from  cps_power
+    where ammeter_id  in (select ammeter_id from   cps_building_group where   scene_id= #{sceneId} )
+    and   time = ( select max(time)  from cps_power where ammeter_id  in (SELECT ammeter_id FROM cps_building_group WHERE scene_id =  #{sceneId})  )
+    </select>
+
+    <!--所有楼宇-->
+    <select id="getSyly" resultType="map">
+        select  building_name,ammeter_id ,building_id from  cps_building_group where   scene_id=#{sceneId}
+    </select>
+
+
+
+    <!--设备今日用电量-->
+    <select id="getSbjrydl" resultType="map">
+      	SELECT 	ammeter_id, max(ammeter_value) - min(ammeter_value) as val  FROM cps_use_electricity
+        WHERE ammeter_id IN (
+             select ammeter_id from cps_elec_unit where building_group in (
+                SELECT 	building_id FROM cps_building_group 	WHERE 	scene_id =#{sceneId}
+            )
+        )
+        AND DATE_FORMAT(time, '%Y-%m-%d') = DATE_FORMAT(sysdate(), '%Y-%m-%d')
+        GROUP BY
+            ammeter_id
+    </select>
+
+    <!--设备当前用电功率-->
+    <select id="getSbdqydgl" resultType="map">
+     SELECT ammeter_id,active_power FROM	cps_power
+		WHERE ammeter_id IN (
+			select ammeter_id from cps_elec_unit where building_group in (
+					SELECT 	building_id FROM cps_building_group 	WHERE 	scene_id = #{sceneId}
+			)
+		)
+		AND time =(
+		SELECT max(time) FROM	cps_power
+				WHERE ammeter_id IN (
+					select ammeter_id from cps_elec_unit where building_group in (
+							SELECT 	building_id FROM cps_building_group 	WHERE 	scene_id =#{sceneId}
+					)
+				)
+		)
+    </select>
+
+    <!--所有设备-->
+    <select id="getSysb" resultType="map">
+        	select elec_unit_id,elec_unit_name,ammeter_id,building_group  from cps_elec_unit  where building_group in (
+							SELECT 	building_id FROM cps_building_group 	WHERE 	scene_id =#{sceneId}
+					)
+    </select>
+
+
+    <!--楼宇用能检测  总电量-->
+    <select id="getLyYnjc" resultType="java.math.BigDecimal">
+        <![CDATA[
+        SELECT 	 max(ammeter_value) - min(ammeter_value) as val  FROM cps_use_electricity
+            WHERE ammeter_id = (select ammeter_id from cps_building_group where building_id=#{buildingId})
+            AND DATE_FORMAT(time, '%Y-%m-%d') >= #{startTime}
+            and DATE_FORMAT(time, '%Y-%m-%d') <=#{endTime}
+       ]]>
+    </select>
+
+    <!--楼宇用能检测 峰值电量-->
+    <select id="getLyYnjcFzdl" resultType="java.math.BigDecimal">
+       <![CDATA[
+             select  sum(val)
+            from (
+            SELECT 	 max(ammeter_value)-min(ammeter_value) as val  FROM cps_use_electricity
+            WHERE ammeter_id  = (select ammeter_id from cps_building_group where building_id=#{buildingId})
+             AND DATE_FORMAT(time, '%Y-%m-%d') >= #{startTime}
+             and DATE_FORMAT(time, '%Y-%m-%d') <= #{endTime}
+            and   DATE_FORMAT(time, '%H') >= 7 and   DATE_FORMAT(time, '%H') < 19
+            group by   DATE_FORMAT(time, '%Y-%m-%d')
+            ) a
+           ]]>
+    </select>
+    
+    <!--  最大时间 -->
+    <select id="getMaxTime" resultType="string" >
+        	select max(b.time) from (
+                select building_name,ammeter_id from cps_building where building_group =#{buildingId}
+               )a  left join  cps_power b
+              on a.ammeter_id = b.ammeter_id
+    </select>
+
+    <!--当前功率-->
+    <select id="getDqgl" resultType="map">
+      select a.building_id,a.building_name,b.active_power from (
+            select building_name,ammeter_id,building_id from cps_building where building_group = #{buildingId}
+        )a  left join  cps_power b
+        on a.ammeter_id = b.ammeter_id and
+          b.time = #{date}
+    </select>
+
+    <!--上一点功率-->
+    <select id="getSydgl" resultType="map">
+        <![CDATA[
+         select a.building_id,a.building_name,b.active_power from (
+                        select building_name,ammeter_id,building_id from cps_building where building_group = #{buildingId}
+                        )a  left join  cps_power b
+                        on a.ammeter_id = b.ammeter_id and
+                        b.time = (
+                    select max(b.time) from (
+                    select building_name,ammeter_id from cps_building where building_group =#{buildingId}
+                    )a  left join  cps_power b
+                    on a.ammeter_id = b.ammeter_id and  b.time < #{date}
+                    )
+        ]]>
+    </select>
+
+
+
+
+    <!--楼层级设备监测详情  总电量-->
+    <select id="getSbYnjc" resultType="java.math.BigDecimal">
+        <![CDATA[
+            SELECT 	 max(ammeter_value) - min(ammeter_value) as val  FROM cps_use_electricity
+            WHERE ammeter_id   = (select ammeter_id from cps_elec_unit where elec_unit_id=#{elecUnitId} )
+            AND DATE_FORMAT(time, '%Y-%m-%d') >= #{startTime}
+            and DATE_FORMAT(time, '%Y-%m-%d') <=#{endTime}
+        ]]>
+
+    </select>
+
+    <!--楼层级设备监测详情 峰值电量-->
+    <select id="getSbYnjcFzdl" resultType="java.math.BigDecimal">
+        <![CDATA[
+             select  sum(val)
+            from (
+            SELECT 	 max(ammeter_value) - min(ammeter_value) as val  FROM cps_use_electricity
+            WHERE ammeter_id  = (select ammeter_id from cps_elec_unit where elec_unit_id=#{elecUnitId} )
+             AND DATE_FORMAT(time, '%Y-%m-%d') >= #{startTime}
+             and DATE_FORMAT(time, '%Y-%m-%d') <= #{endTime}
+            and   DATE_FORMAT(time, '%H') >= 7 and   DATE_FORMAT(time, '%H') < 19
+            group by   DATE_FORMAT(time, '%Y-%m-%d')
+            ) a
+           ]]>
+    </select>
+
+
+    <!--  最大时间 -->
+    <select id="getSbMaxTime" resultType="string" >
+        	select max(b.time) from (
+                 select building_name,ammeter_id,building_id from cps_building_group where building_Id = #{buildingGroup}
+               )a  left join  cps_power b
+              on a.ammeter_id = b.ammeter_id
+    </select>
+
+    <!--当前功率-->
+    <select id="getSbDqgl"  resultType="map">
+      select a.building_id,a.building_name,b.active_power from (
+           select building_name,ammeter_id,building_id from cps_building_group where building_Id = #{buildingGroup}
+        )a  left join  cps_power b
+        on a.ammeter_id = b.ammeter_id and
+          b.time = #{date}
+    </select>
+
+    <!--上一点功率-->
+    <select id="getSbSydgl"  resultType="map">
+        <![CDATA[
+         select a.building_id,a.building_name,b.active_power from (
+                           select building_name,ammeter_id,building_id from cps_building_group where building_Id = #{buildingGroup}
+                        )a  left join  cps_power b
+                        on a.ammeter_id = b.ammeter_id and
+                        b.time = (
+                    select max(b.time) from (
+                    select building_name,ammeter_id from cps_building where building_group =#{buildingGroup}
+                    )a  left join  cps_power b
+                    on a.ammeter_id = b.ammeter_id and  b.time < #{date}
+                    )
+        ]]>
+    </select>
+
+    
+    <select id="getSbnh" resultType="map">
+    select a.elec_unit_id , a.elec_unit_name , max(b.ammeter_value)-min(b.ammeter_value) as val  from
+    (
+        select * from cps_elec_unit
+        where building_group in (select building_id from cps_building_group where scene_id=#{sceneId} )
+    ) a
+    left join cps_use_electricity b on a.ammeter_id = b.ammeter_id and DATE_FORMAT(b.time,'%Y') = DATE_FORMAT(SYSDATE(),'%Y')
+    group by a.elec_unit_id
+    </select>
+
+    <select id="getSbOnline" resultType="map">
+        select distinct  a.elec_unit_id    from
+        (
+            select * from cps_elec_unit
+            where building_group in (select building_id from cps_building_group where scene_id=#{sceneId} )
+        ) a
+        inner join cps_use_electricity b on a.ammeter_id = b.ammeter_id and b.time  >=   DATE_SUB(SYSDATE(),INTERVAL 15 MINUTE)
+    </select>
+
+</mapper>

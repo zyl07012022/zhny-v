@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.component.mapper.ComponentMapper">
+
+    <select id="queryFormData2" resultType="com.alonginfo.project.component.entities.InspectionDetails">
+         select
+            b.patrol_scheme_name  patrolSchemeName,
+            a.patrol_scheme_number patrolSchemeNumber,
+            a.patrol_data  patrolData,
+            a.patrol_person patrolPerson,
+            b.county_company countyCompany,
+            b.feeder,
+            case a.jydt when 1 then '是' else '否' end jydt,
+            case a.mc when 1 then '是' else '否' end  mc,
+            case a.jzw when 1 then '是' else '否' end jzw,
+            case a.fwsb when 1 then '是' else '否' end fwsb,
+            case a.hwsb when 1 then '是' else '否' end hwsb,
+            case a.snzm when 1 then '是' else '否' end  snzm,
+            case a.mssh when 1 then '是' else '否' end  mssh,
+            case a.fwjs when 1 then '是' else '否' end fwjs,
+            case a.xdwdb when 1 then '是' else '否' end xdwdb,
+            case a.snqj when 1 then '是' else '否' end snqj,
+            case a.ywys when 1 then '是' else '否' end   ywys,
+            case a.sfyw when 1 then '是' else '否' end sfyw,
+            case a.snwd when 1 then '是' else '否' end   snwd,
+            case a.fdwh when 1 then '是' else '否' end   fdwh,
+            case a.dlgb when 1 then '是' else '否' end  dlgb,
+            case a.dlgjs when 1 then '是' else '否' end   dlgjs,
+            case a.jksb when 1 then '是' else '否' end jksb,
+            case a.mntb when 1 then '是' else '否' end mntb,
+            case a.snxfaq when 1 then '是' else '否' end snxfaq,
+            a.other_yc otheryc,
+            case a.kgzt when 1 then '是' else '否' end kgzt,
+            case a.kgbh when 1 then '是' else '否' end kgbh,
+            case a.ybzz when 1 then '是' else '否' end ybzz,
+            case a.kgfh when 1 then '是' else '否' end kgfh,
+            case a.ycfd when 1 then '是' else '否' end ycfd,
+            a.ycqw,
+            case a.sbsl when 1 then '是' else '否' end sbsl,
+            case a.gssfzc when 1 then '是' else '否' end gssfzc,
+            a.wljd,
+            case a.dlzdqk when 1 then '是' else '否' end dlzdqk,
+            case a.mpbq when 1 then '是' else '否' end mpbq,
+            a.ddxsq,
+            case a.byqbz when 1 then '是' else '否' end byqbz,
+            case a.fssfsz when 1 then '是' else '否' end fssfsz,
+            case a.wkzswh when 1 then '是' else '否' end wkzswh,
+            case a.dljt when 1 then '是' else '否' end dljt,
+            case a.lswz when 1 then '是' else '否' end lswz,
+            case a.ywywys when 1 then '是' else '否' end ywywys,
+            case a.dymlss when 1 then '是' else '否' end dymlss,
+            case a.dygzfm when 1 then '是' else '否' end dygzfm,
+            case a.ybcl when 1 then '是' else '否' end ybcl,
+            case a.fhzzs when 1 then '是' else '否' end fhzzs,
+            case a.dydllj when 1 then '是' else '否' end dydllj,
+            case a.ysywyw when 1 then '是' else '否' end ysywyw
+        from t_yj_qzqx_patrol_detail a
+        left join t_yj_qzqx_patrol_scheme b
+        on a.patrol_scheme_number = b.patrol_scheme_number
+        where a.patrol_scheme_number = #{patrolSchemeNumber}
+    </select>
+
+    <select id="queryFormData" resultType="java.util.Map">
+        SELECT
+        patrol_scheme_number patrolSchemeNumber,
+        patrol_scheme_name patrolSchemeName,
+        DATE_FORMAT( patrol_data, '%Y-%m-%d %T' ) patrolData,
+        GROUP_CONCAT( b.name ) patrolPerson,
+        county_company countyCompany,
+        feeder,
+        photo_scene photoScene,
+        c.name,
+        c.phone,
+        d.numbe_repair_car,
+        e2.code_name voltage_classes,
+        patrol_object,
+        courtsId,
+        userId
+    FROM
+        t_yj_qzqx_patrol_scheme a
+        LEFT JOIN t_yj_gzqx_qxdy b ON a.team_id = b.team_id
+        AND b.station != 7
+        LEFT JOIN t_yj_gzqx_qxdy c ON a.team_id = c.team_id
+        AND c.station = 7
+        LEFT JOIN t_yj_gzqx_qxc d ON a.team_id = d.team_id
+        LEFT JOIN t_yj_qzqx_code e2 ON e2.guid = a.voltage_classes
+        where a.patrol_scheme_number=#{patrolSchemeNumber}
+    </select>
+    <select id="queryKgbhData" resultType="java.util.Map">
+         select
+            switch_number switchNumber,
+            case switch_type when 1 then '正常' else '异常' end  switchType
+            from t_yj_qzwx_high_tension_switch
+            where patrol_scheme_number = #{patrolSchemeNumber};
+    </select>
+
+    <select id="queryTransformerTemperature" resultType="java.util.Map">
+        select
+            transformer_number      transformerNumber ,
+            transformer_temperature transformerTemperature
+            from
+        t_yj_qzqx_transformer
+        where patrol_scheme_number = #{patrolSchemeNumber};
+    </select>
+
+    <select id="queryNotBalance" resultType="com.alonginfo.project.component.entities.NotBalance">
+         select
+            normal,
+            trigonal_imbalance,
+            max_imbalance,
+            time_maximum_imbalance,
+            load_rate_a,
+            load_rate_b,
+            load_rate_c
+            from t_jy_qzqx_trigonal_imbalance
+         where patrol_scheme_number = #{patrolSchemeNumber};
+    </select>
+
+    <select id="queryHeavyLoad" resultType="com.alonginfo.project.component.entities.HeavyLoad">
+        select
+            overload,
+            heavy_load,
+            normal,
+            max_imbalance,
+            time_maximum_imbalance,
+            load_rate_a,
+            load_rate_b,
+            load_rate_c
+            FROM t_yj_qzqx_overload_detail
+         where patrol_scheme_number = #{patrolSchemeNumber};
+    </select>
+
+    <select id="queryLowVoltage" resultType="com.alonginfo.project.component.entities.LowVoltage">
+         select
+            team_a,
+            team_b,
+            team_c,
+            min_v,
+            time_minimum_imbalance,
+            load_rate_a,
+            load_rate_b,
+            load_rate_c
+            from t_yj_qzqx_voltage_detail
+         where patrol_scheme_number = #{patrolSchemeNumber};
+    </select>
+    <select id="queryTableData" resultType="java.util.Map">
+        select patrol_object patrolObject,patrol_types patrolTypes,patrol_abnormal patrolAbnormal,feedback
+        from t_yj_qzqx_patrol_scheme where patrol_scheme_number = #{patrolSchemeNumber}
+    </select>
+
+</mapper>

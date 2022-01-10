@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.alonginfo.project.emergencyCommand.mapper.RepairStationaryPointMapper">
+
+    <select id="queryPage" resultType="java.util.Map">
+        SELECT
+        a.guid  id,
+        a.repair_stationary_point,
+        a.repair_stationary_address  address,
+        a.repair_stationary_phone  phone,
+        a.repair_stationary_aprincipal leader,
+        c.code_name  vocational_ability  ,
+        b.code_name  orgname,
+        a.repair_stationary_name   name
+        from t_yj_gzqx_qxzd a
+        left join t_yj_qzqx_code b on b.code_type = 1 and a.affiliated_unit = b.code_id
+        left join t_yj_qzqx_code c on c.code_type = 13 and a.repair_stationary_functions = c.code_id
+      <where>
+           1=1
+          <if test="orgname != null and orgname != ''">
+             AND affiliated_unit=#{orgname}
+          </if>
+          <if test="name != null and name != ''">
+              AND instr(repair_stationary_name,#{name}) > 0
+          </if>
+          <if test="address != null and address != ''">
+              AND instr(repair_stationary_address,#{address}) > 0
+          </if>
+          <if test="leader != null and leader != ''">
+              AND instr(repair_stationary_aprincipal,#{leader}) > 0
+          </if>
+          <if test="vocational_ability != null and vocational_ability != ''">
+              AND repair_stationary_functions=#{vocational_ability}
+          </if>
+      </where>
+    </select>
+
+</mapper>
